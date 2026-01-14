@@ -1,0 +1,107 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(anchor *)",
+      "Bash(cargo build-sbf*)",
+      "Bash(cargo test-sbf*)",
+      "Bash(cargo test*)",
+      "Bash(cargo clippy*)",
+      "Bash(cargo fmt*)",
+      "Bash(cargo audit*)",
+      "Bash(cargo install*)",
+      "Bash(cargo geiger*)",
+      "Bash(trident *)",
+      "Bash(solana config*)",
+      "Bash(solana address*)",
+      "Bash(solana balance*)",
+      "Bash(solana airdrop*)",
+      "Bash(solana program show*)",
+      "Bash(solana program dump*)",
+      "Bash(solana logs*)",
+      "Bash(solana account*)",
+      "Bash(solana-test-validator*)",
+      "Bash(npm *)",
+      "Bash(yarn *)",
+      "Bash(pnpm *)",
+      "Bash(bun *)",
+      "Bash(npx *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
+      "Bash(git fetch*)",
+      "Bash(git branch*)",
+      "Bash(git checkout*)",
+      "Bash(gh *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(mkdir *)",
+      "Bash(touch *)",
+      "Bash(echo *)",
+      "Bash(pwd*)",
+      "Bash(cd *)",
+      "Bash(cp *)",
+      "Bash(mv *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(sudo *)",
+      "Bash(chmod 777*)",
+      "Bash(solana program deploy* mainnet*)",
+      "Bash(solana program deploy* --url*mainnet*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "# Auto-format based on file type\nif [ -z \"$CLAUDE_FILE_PATH\" ]; then exit 0; fi\n\ncase \"$CLAUDE_FILE_PATH\" in\n  *.rs)\n    # Format Rust files\n    if command -v rustfmt >/dev/null 2>&1; then\n      rustfmt \"$CLAUDE_FILE_PATH\" 2>/dev/null || true\n    fi\n    ;;\n  *.ts|*.tsx)\n    # Format TypeScript/TSX with prettier\n    if command -v prettier >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then\n      npx prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true\n    fi\n    ;;\n  *.js|*.jsx)\n    # Format JavaScript/JSX with prettier\n    if command -v prettier >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then\n      npx prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true\n    fi\n    ;;\n  *.json)\n    # Format JSON with prettier\n    if command -v prettier >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then\n      npx prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true\n    fi\n    ;;\n  *.md)\n    # Format Markdown with prettier\n    if command -v prettier >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then\n      npx prettier --write \"$CLAUDE_FILE_PATH\" 2>/dev/null || true\n    fi\n    ;;\nesac"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "when": {
+          "command_matches": "cargo test|anchor test"
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "# Post-test analysis\necho \"\"\necho \"📊 Test Summary:\"\nif [ $CLAUDE_TOOL_EXIT_CODE -eq 0 ]; then\n  echo \"✅ All tests passed!\"\nelse\n  echo \"❌ Some tests failed. Review output above.\"\nfi"
+          }
+        ]
+      }
+    ],
+    "PreCommit": [
+      {
+        "type": "command",
+        "command": "# Pre-commit checks for Solana projects\nset -e\n\necho \"🔍 Running pre-commit checks...\"\n\n# Check if it's a Solana program\nif [ -f \"Anchor.toml\" ] || grep -q \"solana-program\" Cargo.toml 2>/dev/null; then\n  echo \"  📝 Checking Rust format...\"\n  cargo fmt --check 2>/dev/null || {\n    echo \"  ⚠️  Format issues found. Running cargo fmt...\"\n    cargo fmt\n    exit 1\n  }\n\n  echo \"  🔎 Running clippy...\"\n  cargo clippy --all-targets -- -D warnings 2>/dev/null || {\n    echo \"  ⚠️  Clippy warnings found. Please fix before committing.\"\n    exit 1\n  }\n\n  echo \"  🧪 Running quick tests...\"\n  cargo test --lib 2>/dev/null || {\n    echo \"  ⚠️  Unit tests failed. Please fix before committing.\"\n    exit 1\n  }\nfi\n\n# Check if it's a frontend project\nif [ -f \"package.json\" ]; then\n  if command -v prettier >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then\n    echo \"  📝 Checking TypeScript format...\"\n    npx prettier --check \"**/*.{ts,tsx,js,jsx,json}\" 2>/dev/null || {\n      echo \"  ⚠️  Format issues found. Running prettier...\"\n      npx prettier --write \"**/*.{ts,tsx,js,jsx,json}\"\n      exit 1\n    }\n  fi\n\n  if [ -f \"tsconfig.json\" ]; then\n    echo \"  🔎 Type checking...\"\n    npx tsc --noEmit 2>/dev/null || {\n      echo \"  ⚠️  Type errors found. Please fix before committing.\"\n      exit 1\n    }\n  fi\nfi\n\necho \"✅ Pre-commit checks passed!\""
+      }
+    ],
+    "PreDeploy": [
+      {
+        "when": {
+          "command_matches": "anchor deploy|solana program deploy"
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "# Pre-deployment safety checks\nset -e\n\necho \"\"\necho \"🚨 PRE-DEPLOYMENT SAFETY CHECKS\"\necho \"================================\"\n\n# Check current network\nCURRENT_NETWORK=$(solana config get | grep \"RPC URL\" | awk '{print $3}')\necho \"Network: $CURRENT_NETWORK\"\n\nif echo \"$CURRENT_NETWORK\" | grep -q \"mainnet\"; then\n  echo \"\"\n  echo \"⚠️  WARNING: Deploying to MAINNET!\"\n  echo \"This will cost real SOL and is IRREVERSIBLE.\"\n  echo \"\"\n  echo \"Pre-deployment checklist:\"\n  echo \"  - All tests passing?\"\n  echo \"  - Security audit completed?\"\n  echo \"  - Verifiable build tested?\"\n  echo \"  - Devnet testing successful?\"\n  echo \"\"\n  echo \"Type 'DEPLOY TO MAINNET' to confirm (or Ctrl+C to cancel):\"\n  read -r confirmation\n  if [ \"$confirmation\" != \"DEPLOY TO MAINNET\" ]; then\n    echo \"Deployment cancelled.\"\n    exit 1\n  fi\nelse\n  echo \"✅ Deploying to $CURRENT_NETWORK (safe)\"\nfi\n\n# Verify build is recent\nif [ -f \"Anchor.toml\" ]; then\n  if [ ! -f \"target/deploy/\"*.so ]; then\n    echo \"❌ No program binary found. Run 'anchor build' first.\"\n    exit 1\n  fi\n  \n  BINARY_AGE=$(($(date +%s) - $(stat -f %m target/deploy/*.so 2>/dev/null || stat -c %Y target/deploy/*.so)))\n  if [ $BINARY_AGE -gt 3600 ]; then\n    echo \"⚠️  Program binary is over 1 hour old. Consider rebuilding.\"\n  fi\nfi\n\necho \"\"\necho \"✅ Pre-deployment checks complete. Proceeding...\"\necho \"\""
+          }
+        ]
+      }
+    ]
+  },
+  "modelDefaults": {
+    "agent": "opus",
+    "command": "sonnet"
+  }
+}

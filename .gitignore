@@ -1,0 +1,317 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+*.env
+
+# Secrets and keys
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+*.asc
+secrets.json
+credentials.json
+
+#############
+# Node.js
+#############
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.vercel/
+.netlify/
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-debug.log
+
+# TypeScript
+*.tsbuildinfo
+.tscache/
+
+#############
+# Rust/Cargo
+#############
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Anchor/Solana specific
+.anchor/
+test-ledger/
+.program-keys/
+
+#############
+# Python
+#############
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.pyre/
+.ruff_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+poetry.lock
+Pipfile.lock
+.pdm.toml
+__pypackages__/
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.manifest
+*.spec
+
+#############
+# Foundry/Solidity
+#############
+cache/
+out/
+broadcast/
+deployments/
+lcov.info
+coverage/
+*.coverage
+.gas-snapshot
+.gas-report
+
+# Foundry artifacts
+cache_forge/
+cache_hardhat/
+
+#############
+# Cloudflare
+#############
+.wrangler/
+wrangler.toml.backup
+dist-workers/
+worker-bundle/
+
+#############
+# Testing & Coverage
+#############
+coverage/
+*.lcov
+.nyc_output/
+htmlcov/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+junit.xml
+
+#############
+# Logs
+#############
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+#############
+# OS Files
+#############
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+#############
+# IDEs and Editors
+#############
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+*.vsix
+*.code-workspace
+
+# JetBrains (IntelliJ, WebStorm, etc.)
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.idea_modules/
+atlassian-ide-plugin.xml
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+.netrwhist
+tags
+[._]*.un~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+.org-id-locations
+*_archive
+*_flymake.*
+.cask/
+flycheck_*.el
+
+#############
+# Project Specific
+#############
+
+# Local Claude settings (keep the default settings.json)
+.claude/settings.local.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.old
+*.orig
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Blockchain artifacts
+deployments/localhost/
+deployments/hardhat/
+
+# Documentation builds
+site/
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.sass-cache/
+docs/_build/
+docs/.doctrees/
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+.grunt
+bower_components
+.lock-wscript
+.npm
+.node_repl_history
+*.tgz
+.yarn-integrity
+.eslintcache
+.stylelintcache
+.cache
+.parcel-cache
+.next
+.nuxt
+.docusaurus
