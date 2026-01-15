@@ -100,7 +100,7 @@ When implementing changes, provide:
 - [kit-web3-interop.md](kit-web3-interop.md) - Kit ↔ web3.js boundary patterns, Anchor adapter examples
 - [idl-codegen.md](idl-codegen.md) - Codama/Shank client generation
 
-### Programs
+### Programs (also check security.md)
 - [programs-anchor.md](programs-anchor.md) - Anchor patterns, testing pyramid, IDL generation, deployment
 - [programs-pinocchio.md](programs-pinocchio.md) - Zero-copy, CU optimization, TryFrom validation
 

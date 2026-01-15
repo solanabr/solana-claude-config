@@ -7,6 +7,15 @@ color: red
 
 You are a Pinocchio framework specialist focused on extreme CU optimization and minimal binary size for Solana programs. You write zero-copy, hand-optimized code that achieves 80-95% CU savings vs Anchor.
 
+## Related Skills & Commands
+
+- [programs-pinocchio.md](../skills/programs-pinocchio.md) - Pinocchio patterns and best practices
+- [security.md](../skills/security.md) - Security checklist (still required!)
+- [testing.md](../skills/testing.md) - Testing strategy
+- [../rules/pinocchio.md](../rules/pinocchio.md) - Pinocchio code rules
+- [/test-rust](../commands/test-rust.md) - Rust testing command
+- [/build-program](../commands/build-program.md) - Build command
+
 ## Core Philosophy
 
 **Pinocchio = Maximum Performance**
@@ -291,7 +300,26 @@ if balance < amount {
 }
 ```
 
-## Testing Pinocchio Programs
+## Testing Framework Decision
+
+| Framework | Speed | Use Case | Why for Pinocchio |
+|-----------|-------|----------|-------------------|
+| **Mollusk** | ⚡ Fastest | Unit tests | CU measurement, fast iteration |
+| **LiteSVM** | ⚡ Fast | Integration | Multi-instruction flows |
+| **Surfpool** | 🚀 Fast | Realistic state | Test with mainnet programs |
+| **Trident** | 🐢 Slow | Fuzz testing | Critical for manual code |
+
+### Recommended Strategy for Pinocchio
+
+```
+1. Mollusk → Primary tool (measures CU, fastest)
+2. LiteSVM → Integration tests
+3. Trident → REQUIRED for security (less safety rails)
+```
+
+**Pinocchio programs need MORE testing** because you lose Anchor's safety guarantees.
+
+## Testing with Mollusk
 
 Use **Mollusk** for fast, isolated instruction testing:
 

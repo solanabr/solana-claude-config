@@ -1,2 +1,3 @@
 - Integrate any MCP tools used in project
-- 
+- Wait for [bug] to be solved and review rules/skills token usage
+- Test pinnochio usage
