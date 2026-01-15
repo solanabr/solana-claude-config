@@ -1,7 +1,6 @@
 # Programs with Anchor (default choice)
 
 ## When to use Anchor
-
 Use Anchor by default when:
 - You want fast iteration with reduced boilerplate
 - You want an IDL and TypeScript client story out of the box
@@ -52,13 +51,54 @@ Enables custom, human-readable error types with `#[msg(...)]` attributes for cle
 pub account: Account<'info, CustomAccount>,
 ```
 
-### PDA Validation with Stored Bump
+### PDA Validation
 ```rust
 #[account(
     seeds = [b"vault", owner.key().as_ref()],
-    bump = vault.bump,  // Use stored bump, not recalculate
+    bump
 )]
-pub vault: Account<'info, Vault>,
+pub vault: SystemAccount<'info>,
+```
+
+### Enhanced: Canonical Bump Pattern (CU Optimization)
+
+**Always store the canonical bump to save ~1500 CU per PDA access:**
+
+```rust
+#[account]
+#[derive(InitSpace)]
+pub struct Vault {
+    pub authority: Pubkey,  // 32
+    pub bump: u8,           // 1 - ALWAYS STORE THIS!
+    pub balance: u64,       // 8
+}
+
+// Initialize with canonical bump
+pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+    let vault = &mut ctx.accounts.vault;
+    vault.authority = ctx.accounts.authority.key();
+    vault.bump = ctx.bumps.vault;  // Store canonical bump
+    vault.balance = 0;
+    Ok(())
+}
+
+// Use stored bump for CPIs (saves ~1500 CU vs find_program_address)
+pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+    let authority = ctx.accounts.vault.authority;
+    let seeds = &[
+        b"vault",
+        authority.as_ref(),
+        &[ctx.accounts.vault.bump],  // Use stored bump!
+    ];
+    let signer_seeds = &[&seeds[..]];
+
+    // CPI with stored bump
+    token::transfer(
+        CpiContext::new_with_signer(/* ... */, signer_seeds),
+        amount,
+    )?;
+    Ok(())
+}
 ```
 
 ### Ownership and Relationships
@@ -104,44 +144,30 @@ pub struct Escrow { ... }
 - Using `[1]` prevents using `[1, 2, ...]` which also start with `1`
 - `[0]` conflicts with uninitialized accounts
 
-## Canonical Bump Pattern (CRITICAL)
+## Instruction Patterns
 
-**Always store the canonical bump to save ~1500 CU per PDA access:**
+### Basic Structure
+```rust
+#[program]
+pub mod my_program {
+    use super::*;
+
+    pub fn initialize(ctx: Context<Initialize>, data: u64) -> Result<()> {
+        ctx.accounts.account.data = data;
+        Ok(())
+    }
+}
+```
+
+### Context Implementation Pattern
+Move logic to context struct implementations for organization and testability:
 
 ```rust
-#[account]
-#[derive(InitSpace)]
-pub struct Vault {
-    pub authority: Pubkey,  // 32
-    pub bump: u8,           // 1 - ALWAYS STORE THIS!
-    pub balance: u64,       // 8
-}
-
-// Initialize with canonical bump
-pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-    let vault = &mut ctx.accounts.vault;
-    vault.authority = ctx.accounts.authority.key();
-    vault.bump = ctx.bumps.vault;  // Store canonical bump
-    vault.balance = 0;
-    Ok(())
-}
-
-// Use stored bump for CPIs (saves ~1500 CU vs find_program_address)
-pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-    let authority = ctx.accounts.vault.authority;
-    let seeds = &[
-        b"vault",
-        authority.as_ref(),
-        &[ctx.accounts.vault.bump],  // Use stored bump!
-    ];
-    let signer_seeds = &[&seeds[..]];
-
-    // CPI with stored bump
-    token::transfer(
-        CpiContext::new_with_signer(/* ... */, signer_seeds),
-        amount,
-    )?;
-    Ok(())
+impl<'info> Transfer<'info> {
+    pub fn transfer_tokens(&mut self, amount: u64) -> Result<()> {
+        // Implementation
+        Ok(())
+    }
 }
 ```
 
@@ -166,7 +192,7 @@ let signer = &[&seeds[..]];
 let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
 ```
 
-### CRITICAL: Account Reloading After CPIs
+### Enhanced: Account Reloading After CPIs
 
 **Anchor doesn't automatically update deserialized accounts after a CPI. Without `.reload()`, you have stale data!**
 
@@ -208,20 +234,11 @@ pub enum MyError {
     CustomError,
     #[msg("Value too large: {0}")]
     ValueError(u64),
-    #[msg("Arithmetic overflow")]
-    Overflow,
-    #[msg("Insufficient funds")]
-    InsufficientFunds,
 }
 
 // Usage
 require!(value > 0, MyError::CustomError);
 require!(value < 100, MyError::ValueError(value));
-
-// Checked arithmetic
-vault.balance = vault.balance
-    .checked_add(amount)
-    .ok_or(MyError::Overflow)?;
 ```
 
 ## Token Accounts
@@ -243,22 +260,37 @@ pub token_account: Account<'info, TokenAccount>,
 ```
 
 ### Token2022 Compatibility
-
-Use `InterfaceAccount` for dual compatibility with SPL Token and Token-2022:
+Use `InterfaceAccount` for dual compatibility:
 
 ```rust
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::token_interface::{Mint, TokenAccount};
 
 pub mint: InterfaceAccount<'info, Mint>,
 pub token_account: InterfaceAccount<'info, TokenAccount>,
 pub token_program: Interface<'info, TokenInterface>,
 ```
 
-**Token-2022 Extensions to be aware of:**
-- **Transfer Fees**: Fee deducted automatically, calculate net amounts
-- **Transfer Hooks**: Your program can be called on transfers
-- **Confidential Transfers**: Zero-knowledge proofs for private balances
-- **Non-Transferable**: Soulbound tokens
+### Enhanced: Event Emission
+
+```rust
+#[event]
+pub struct Transfer {
+    #[index]
+    pub from: Pubkey,
+    #[index]
+    pub to: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+}
+
+// Emit on state changes
+emit!(Transfer {
+    from: ctx.accounts.from.key(),
+    to: ctx.accounts.to.key(),
+    amount,
+    timestamp: Clock::get()?.unix_timestamp,
+});
+```
 
 ## LazyAccount (Anchor 0.31+)
 
@@ -292,54 +324,27 @@ pub struct LargeAccount {
 
 Accounts under 10,240 bytes use `init`; larger accounts require external creation then `zero` constraint initialization.
 
-## CU Optimization Tips
+## Remaining Accounts
 
-### Store bumps (saves ~1500 CU per PDA)
+Pass dynamic accounts beyond fixed instruction structure:
+
 ```rust
-pub struct Vault {
-    pub bump: u8,  // Always store!
+pub fn batch_operation(ctx: Context<BatchOp>, amounts: Vec<u64>) -> Result<()> {
+    let remaining = &ctx.remaining_accounts;
+    require!(remaining.len() % 2 == 0, BatchError::InvalidSchema);
+
+    for (i, chunk) in remaining.chunks(2).enumerate() {
+        process_pair(&chunk[0], &chunk[1], amounts[i])?;
+    }
+    Ok(())
 }
 ```
 
-### Feature-gate debug logs
-```rust
-#[cfg(feature = "debug")]
-msg!("Debug: value = {}", value);
-```
+## Version Management
 
-### Use InitSpace derive
-```rust
-#[account]
-#[derive(InitSpace)]
-pub struct User {
-    pub authority: Pubkey,      // 32
-    pub bump: u8,               // 1
-    #[max_len(50)]
-    pub name: String,           // 4 + 50
-}
-```
-
-## Event Emission
-
-```rust
-#[event]
-pub struct Transfer {
-    #[index]
-    pub from: Pubkey,
-    #[index]
-    pub to: Pubkey,
-    pub amount: u64,
-    pub timestamp: i64,
-}
-
-// Emit on state changes
-emit!(Transfer {
-    from: ctx.accounts.from.key(),
-    to: ctx.accounts.to.key(),
-    amount,
-    timestamp: Clock::get()?.unix_timestamp,
-});
-```
+- Use AVM (Anchor Version Manager) for reproducible builds
+- Keep Solana CLI + Anchor versions aligned in CI and developer setup
+- Pin versions in `Anchor.toml`
 
 ## Security Best Practices
 
@@ -353,7 +358,6 @@ emit!(Transfer {
 - Use `Program<'info, T>` to validate CPI targets (prevents arbitrary CPI attacks)
 - Never pass extra privileges to CPI callees
 - Prefer explicit program IDs for known CPIs
-- **Always reload accounts after CPIs if they were modified**
 
 ### Common Gotchas
 - **Avoid `init_if_needed`**: Permits reinitialization attacks
@@ -363,27 +367,18 @@ emit!(Transfer {
 ## Testing
 
 - Use `anchor test` for end-to-end tests
-- Prefer Mollusk or LiteSVM for fast unit tests (see `testing.md`)
-- Use Trident for fuzz testing critical paths
+- Prefer Mollusk or LiteSVM for fast unit tests
 - Use Surfpool for integration tests with mainnet state
-
-## Verifiable Builds (MANDATORY for Mainnet)
-
-```bash
-# For mainnet deployments - ensures reproducible builds
-anchor build --verifiable
-
-# Verify deployed program matches source
-anchor verify <program-id> --provider.cluster mainnet
-```
 
 ## IDL and Clients
 
 - Treat the program's IDL as a product artifact
-- Prefer generating Kit-native clients via Codama (see `idl-codegen.md`)
+- Prefer generating Kit-native clients via Codama
 - If using Anchor TS client in Kit-first app, put it behind web3-compat boundary
 
-## Security Checklist (Per Instruction)
+## Enhanced: Security Checklist (Per Instruction)
+
+Use this checklist for every instruction:
 
 - [ ] All accounts validated (owner, signer, PDA)
 - [ ] Arithmetic uses checked operations

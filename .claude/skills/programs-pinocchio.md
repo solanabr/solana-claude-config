@@ -11,14 +11,6 @@ Use Pinocchio when you need:
 - **Fine-grained control**: Direct memory access and byte-level operations
 - **no_std environments**: Embedded or constrained contexts
 
-## When to Use Anchor Instead
-
-- Team is learning Solana
-- Development speed > performance
-- Program complexity is high
-- IDL generation required
-- Maintenance burden is a concern
-
 ## Core Architecture
 
 ### Entrypoint Pattern
@@ -43,14 +35,6 @@ fn process_instruction(
 ```
 
 Single-byte discriminators support 255 instructions; use two bytes for up to 65,535 variants.
-
-### Lazy Entrypoint (Maximum Performance)
-
-```rust
-use pinocchio::lazy_program_entrypoint;
-
-lazy_program_entrypoint!(process_instruction);
-```
 
 ### Instruction Structure
 
@@ -149,7 +133,139 @@ impl<'a> TryFrom<&'a [u8]> for DepositData {
 }
 ```
 
-## Zero-Copy Account Access
+## Token Account Helpers
+
+### SPL Token Validation
+
+```rust
+pub struct Mint;
+
+impl Mint {
+    pub fn check(account: &AccountInfo) -> Result<(), ProgramError> {
+        if !account.is_owned_by(&pinocchio_token::ID) {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if account.data_len() != pinocchio_token::state::Mint::LEN {
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
+    }
+
+    pub fn init(
+        account: &AccountInfo,
+        payer: &AccountInfo,
+        decimals: u8,
+        mint_authority: &[u8; 32],
+        freeze_authority: Option<&[u8; 32]>,
+    ) -> ProgramResult {
+        let lamports = Rent::get()?.minimum_balance(pinocchio_token::state::Mint::LEN);
+
+        CreateAccount {
+            from: payer,
+            to: account,
+            lamports,
+            space: pinocchio_token::state::Mint::LEN as u64,
+            owner: &pinocchio_token::ID,
+        }.invoke()?;
+
+        InitializeMint2 {
+            mint: account,
+            decimals,
+            mint_authority,
+            freeze_authority,
+        }.invoke()
+    }
+}
+```
+
+### Token2022 Support
+
+Token2022 requires discriminator-based validation due to variable account sizes with extensions:
+
+```rust
+pub const TOKEN_2022_PROGRAM_ID: [u8; 32] = [...];
+const TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET: usize = 165;
+pub const TOKEN_2022_MINT_DISCRIMINATOR: u8 = 0x01;
+pub const TOKEN_2022_TOKEN_ACCOUNT_DISCRIMINATOR: u8 = 0x02;
+
+pub struct Mint2022;
+
+impl Mint2022 {
+    pub fn check(account: &AccountInfo) -> Result<(), ProgramError> {
+        if !account.is_owned_by(&TOKEN_2022_PROGRAM_ID) {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+
+        let data = account.try_borrow_data()?;
+
+        if data.len() != pinocchio_token::state::Mint::LEN {
+            if data.len() <= TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET {
+                return Err(ProgramError::InvalidAccountData);
+            }
+            if data[TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET] != TOKEN_2022_MINT_DISCRIMINATOR {
+                return Err(ProgramError::InvalidAccountData);
+            }
+        }
+        Ok(())
+    }
+}
+```
+
+### Token Interface (Both Programs)
+
+```rust
+pub struct MintInterface;
+
+impl MintInterface {
+    pub fn check(account: &AccountInfo) -> Result<(), ProgramError> {
+        if account.is_owned_by(&pinocchio_token::ID) {
+            if account.data_len() != pinocchio_token::state::Mint::LEN {
+                return Err(ProgramError::InvalidAccountData);
+            }
+        } else if account.is_owned_by(&TOKEN_2022_PROGRAM_ID) {
+            Mint2022::check(account)?;
+        } else {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        Ok(())
+    }
+}
+```
+
+## Cross-Program Invocations (CPIs)
+
+### Basic CPI
+
+```rust
+use pinocchio_system::instructions::Transfer;
+
+Transfer {
+    from: self.accounts.owner,
+    to: self.accounts.vault,
+    lamports: self.data.amount,
+}.invoke()?;
+```
+
+### PDA-Signed CPI
+
+```rust
+use pinocchio::{seeds::Seed, signer::Signer};
+
+let seeds = [
+    Seed::from(b"vault"),
+    Seed::from(self.accounts.owner.key().as_ref()),
+    Seed::from(&[bump]),
+];
+let signers = [Signer::from(&seeds)];
+
+Transfer {
+    from: self.accounts.vault,
+    to: self.accounts.owner,
+    lamports: self.accounts.vault.lamports(),
+}.invoke_signed(&signers)?;
+```
+
+## Reading and Writing Data
 
 ### Struct Field Ordering
 
@@ -220,6 +336,37 @@ impl Config {
 }
 ```
 
+### Field-by-Field Serialization (Safest)
+
+```rust
+impl Config {
+    pub fn write_to_buffer(&self, data: &mut [u8]) -> Result<(), ProgramError> {
+        if data.len() != Self::LEN {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        let mut offset = 0;
+
+        data[offset..offset + 32].copy_from_slice(self.authority.as_ref());
+        offset += 32;
+
+        data[offset..offset + 32].copy_from_slice(self.mint.as_ref());
+        offset += 32;
+
+        data[offset..offset + 8].copy_from_slice(&self.seed);
+        offset += 8;
+
+        data[offset..offset + 2].copy_from_slice(&self.fee);
+        offset += 2;
+
+        data[offset] = self.state;
+        data[offset + 1] = self.bump;
+
+        Ok(())
+    }
+}
+```
+
 ### Dangerous Patterns to Avoid
 
 ```rust
@@ -236,123 +383,6 @@ let b_ref = &packed.b;
 
 // ❌ Assuming alignment without verification
 let config = unsafe { &*(data.as_ptr() as *const Config) };
-```
-
-## PDA Validation (Manual)
-
-### Store and use canonical bumps
-
-```rust
-use pinocchio::pubkey::Pubkey;
-
-// GOOD - Manual PDA validation with stored bump using create_program_address
-fn validate_pda(
-    account: &AccountInfo,
-    seeds: &[&[u8]],
-    stored_bump: u8,
-    program_id: &Pubkey,
-) -> ProgramResult {
-    // Construct full seeds including bump
-    let bump_slice = &[stored_bump];
-    let mut full_seeds: Vec<&[u8]> = seeds.to_vec();
-    full_seeds.push(bump_slice);
-
-    // Create PDA from known seeds + stored bump (no search needed!)
-    let derived_address = Pubkey::create_program_address(&full_seeds, program_id)
-        .map_err(|_| ProgramError::InvalidSeeds)?;
-
-    // Validate
-    if account.key() != &derived_address {
-        return Err(ProgramError::InvalidSeeds);
-    }
-
-    Ok(())
-}
-```
-
-## Cross-Program Invocations (CPIs)
-
-### Basic CPI
-
-```rust
-use pinocchio_system::instructions::Transfer;
-
-Transfer {
-    from: self.accounts.owner,
-    to: self.accounts.vault,
-    lamports: self.data.amount,
-}.invoke()?;
-```
-
-### PDA-Signed CPI
-
-```rust
-use pinocchio::{seeds::Seed, signer::Signer};
-
-let seeds = [
-    Seed::from(b"vault"),
-    Seed::from(self.accounts.owner.key().as_ref()),
-    Seed::from(&[bump]),
-];
-let signers = [Signer::from(&seeds)];
-
-Transfer {
-    from: self.accounts.vault,
-    to: self.accounts.owner,
-    lamports: self.accounts.vault.lamports(),
-}.invoke_signed(&signers)?;
-```
-
-## Token Account Helpers
-
-### SPL Token Validation
-
-```rust
-pub struct Mint;
-
-impl Mint {
-    pub fn check(account: &AccountInfo) -> Result<(), ProgramError> {
-        if !account.is_owned_by(&pinocchio_token::ID) {
-            return Err(ProgramError::InvalidAccountOwner);
-        }
-        if account.data_len() != pinocchio_token::state::Mint::LEN {
-            return Err(ProgramError::InvalidAccountData);
-        }
-        Ok(())
-    }
-}
-```
-
-### Token2022 Support
-
-Token2022 requires discriminator-based validation due to variable account sizes with extensions:
-
-```rust
-pub const TOKEN_2022_PROGRAM_ID: [u8; 32] = [...];
-const TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET: usize = 165;
-pub const TOKEN_2022_MINT_DISCRIMINATOR: u8 = 0x01;
-
-pub struct Mint2022;
-
-impl Mint2022 {
-    pub fn check(account: &AccountInfo) -> Result<(), ProgramError> {
-        if !account.is_owned_by(&TOKEN_2022_PROGRAM_ID) {
-            return Err(ProgramError::InvalidAccountOwner);
-        }
-
-        let data = account.try_borrow_data()?;
-
-        if data.len() != pinocchio_token::state::Mint::LEN {
-            if data.len() <= TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET {
-                return Err(ProgramError::InvalidAccountData);
-            }
-            if data[TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET] != TOKEN_2022_MINT_DISCRIMINATOR {
-                return Err(ProgramError::InvalidAccountData);
-            }
-        }
-        Ok(())
-    }
-}
 ```
 
 ## Error Handling
@@ -404,7 +434,7 @@ pub fn close(account: &AccountInfo, destination: &AccountInfo) -> ProgramResult 
 
 ## Performance Optimization
 
-### Feature Flags for Logging
+### Feature Flags
 
 ```toml
 [features]
@@ -417,29 +447,28 @@ perf = []
 pinocchio::msg!("Instruction: Deposit");
 ```
 
-### Binary Size Optimization
+### Bitwise Flags for Storage
 
-```toml
-# Cargo.toml
-[profile.release]
-overflow-checks = true  # Keep for security
-lto = "fat"            # Link-time optimization
-codegen-units = 1      # Single codegen unit
-opt-level = "z"        # Optimize for size
-strip = true           # Strip symbols
-```
-
-### Minimize Allocations
+Pack up to 8 booleans in one byte:
 
 ```rust
-// BAD - allocates Vec
-let seeds = vec![b"vault".as_slice(), authority.as_ref()];
+const FLAG_ACTIVE: u8 = 1 << 0;
+const FLAG_FROZEN: u8 = 1 << 1;
+const FLAG_ADMIN: u8 = 1 << 2;
 
-// GOOD - stack-allocated array
-let seeds: &[&[u8]] = &[b"vault", authority.as_ref()];
+// Set flag
+flags |= FLAG_ACTIVE;
+
+// Check flag
+if flags & FLAG_ACTIVE != 0 { /* active */ }
+
+// Clear flag
+flags &= !FLAG_ACTIVE;
 ```
 
 ### Zero-Allocation Architecture
+
+Use references instead of heap allocations:
 
 ```rust
 // Good: references with borrowed lifetimes
@@ -453,6 +482,22 @@ no_allocator!();
 ```
 
 Respect Solana's memory limits: 4KB stack per function, 32KB total heap.
+
+### Skip Redundant Checks
+
+If a CPI will fail on incorrect accounts anyway, skip pre-validation:
+
+```rust
+// Instead of validating ATA derivation, compute expected address
+let expected_ata = find_program_address(
+    &[owner.key(), token_program.key(), mint.key()],
+    &pinocchio_associated_token_account::ID,
+).0;
+
+if account.key() != &expected_ata {
+    return Err(ProgramError::InvalidAccountData);
+}
+```
 
 ## Batch Instructions
 
@@ -491,65 +536,18 @@ pub fn process_batch(mut accounts: &[AccountInfo], mut data: &[u8]) -> ProgramRe
 }
 ```
 
-## Testing with Mollusk
+## Testing
+
+Use Mollusk or LiteSVM for fast Rust-based testing:
 
 ```rust
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use mollusk_svm::Mollusk;
-    use solana_sdk::{account::Account, instruction::Instruction, pubkey::Pubkey};
+pub mod tests;
 
-    #[test]
-    fn test_deposit() {
-        let program_id = Pubkey::new_unique();
-        let mollusk = Mollusk::new(&program_id, "target/deploy/vault");
-
-        let authority = Pubkey::new_unique();
-        let (vault_pda, bump) = Pubkey::find_program_address(
-            &[b"vault", authority.as_ref()],
-            &program_id,
-        );
-
-        // Build instruction
-        let mut ix_data = vec![0u8]; // deposit discriminator
-        ix_data.extend_from_slice(&1000u64.to_le_bytes());
-
-        let instruction = Instruction {
-            program_id,
-            accounts: vec![/* ... */],
-            data: ix_data,
-        };
-
-        let result = mollusk.process_instruction(&instruction, &accounts);
-
-        assert!(result.program_result.is_ok());
-
-        // Verify CU usage - Pinocchio should be very efficient
-        println!("CU consumed: {}", result.compute_units_consumed);
-        assert!(result.compute_units_consumed < 5000);
-    }
-}
+// Run with: cargo test-sbf
 ```
 
-## CU Benchmarking
-
-Use Mollusk's compute unit bencher for tracking performance:
-
-```rust
-use mollusk_svm::MolluskComputeUnitBencher;
-
-let bencher = MolluskComputeUnitBencher::new(mollusk)
-    .must_pass(true)
-    .out_dir("../target/benches");
-
-bencher.bench(
-    "deposit_instruction",
-    &instruction,
-    &accounts,
-);
-// Generates markdown report with CU usage and deltas
-```
+See [testing.md](testing.md) for detailed testing patterns with Mollusk and LiteSVM.
 
 ## Security Checklist
 
@@ -561,37 +559,3 @@ bencher.bench(
 - [ ] Mark closed accounts to prevent revival attacks
 - [ ] Validate instruction data length before parsing
 - [ ] Check for duplicate mutable accounts when accepting multiple of same type
-
-## Integration with Codama
-
-### Generate IDL and clients separately
-
-```bash
-# Pinocchio doesn't auto-generate IDL
-# Use Shank for IDL generation
-cargo install shank-cli
-
-# Generate IDL
-shank idl --out-dir idl programs/your-program/src/lib.rs
-
-# Use Codama for client generation
-npx @codama/cli generate
-```
-
-## Best Practices Summary
-
-1. **Start with Anchor, optimize with Pinocchio if needed**
-2. **Always benchmark CU savings** - measure before/after
-3. **Document all unsafe code** - explain safety invariants
-4. **Comprehensive testing** - more critical without Anchor safety nets
-5. **Use TryFrom pattern** - maintains ergonomics with safety
-6. **Store canonical bumps** - don't recalculate PDAs
-7. **Single-byte discriminators** - saves space and CU
-8. **Feature-gate logs** - minimize production overhead
-
----
-
-**Sources:**
-- [Pinocchio GitHub](https://github.com/anza-xyz/pinocchio)
-- [Pinocchio Guide](https://www.helius.dev/blog/pinocchio)
-- [Pinocchio Optimization Patterns](https://www.quicknode.com/guides/solana-development/pinocchio/how-to-build-and-deploy-a-solana-program-using-pinocchio)

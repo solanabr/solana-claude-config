@@ -7,7 +7,6 @@ Assume the attacker controls:
 - Every instruction argument
 - Transaction ordering (within reason)
 - CPI call graphs (via composability)
-- Oracle prices (manipulation via flash loans)
 
 ---
 
@@ -143,13 +142,6 @@ seeds = [b"pool", pool.mint.as_ref()]
 seeds = [b"pool", vault.key().as_ref(), owner.key().as_ref()]
 ```
 
-**Best Practice**: Use unique prefixes for different account types:
-```rust
-pub const USER_VAULT_SEED: &[u8] = b"user_vault";
-pub const ADMIN_CONFIG_SEED: &[u8] = b"admin_config";
-pub const POOL_STATE_SEED: &[u8] = b"pool_state";
-```
-
 ---
 
 ### 6. Type Cosplay Attacks
@@ -246,70 +238,6 @@ if data.authority != *authority.key() {
 
 ---
 
-### 10. Arithmetic Overflow/Underflow
-
-**Risk**: Integer operations silently wrap in release mode.
-
-**Attack**: Attacker crafts amounts that overflow, resulting in unexpected values.
-
-**Prevention**:
-```rust
-// ALWAYS use checked arithmetic
-let new_balance = balance
-    .checked_add(deposit)
-    .ok_or(ProgramError::ArithmeticOverflow)?;
-
-let remaining = balance
-    .checked_sub(withdrawal)
-    .ok_or(ProgramError::InsufficientFunds)?;
-
-// For complex calculations
-let share = amount
-    .checked_mul(PRECISION)
-    .and_then(|v| v.checked_div(total))
-    .ok_or(ProgramError::ArithmeticOverflow)?;
-```
-
----
-
-### 11. Oracle Manipulation
-
-**Risk**: On-chain oracles can be manipulated via flash loans or low-liquidity markets.
-
-**Attack**: Attacker manipulates oracle price within a single transaction to exploit price-dependent logic.
-
-**Prevention**:
-```rust
-// Validate oracle data age
-let price_data = oracle_account.try_borrow_data()?;
-let last_update = get_oracle_timestamp(&price_data)?;
-let current_time = Clock::get()?.unix_timestamp;
-
-if current_time - last_update > MAX_ORACLE_AGE_SECONDS {
-    return Err(ErrorCode::StaleOracleData.into());
-}
-
-// Use TWAP (time-weighted average price) for DeFi
-// Consider multiple oracle sources
-// Implement circuit breakers for extreme price movements
-```
-
----
-
-### 12. Front-Running and MEV
-
-**Risk**: Validators or searchers can see pending transactions and front-run them.
-
-**Attack**: Attacker observes profitable transaction, submits own transaction with higher priority fee.
-
-**Mitigation**:
-- Use slippage protection for swaps
-- Implement commit-reveal schemes for sensitive operations
-- Consider private mempools (Jito) for high-value transactions
-- Design programs to be MEV-resistant where possible
-
----
-
 ## Program-Side Checklist
 
 ### Account Validation
@@ -320,121 +248,44 @@ if current_time - last_update > MAX_ORACLE_AGE_SECONDS {
 - [ ] Validate token mint ↔ token account relationships
 - [ ] Validate rent exemption / initialization status
 - [ ] Check for duplicate mutable accounts
-- [ ] Validate Token-2022 extension compatibility
 
 ### CPI Safety
 - [ ] Validate program IDs before CPIs (no arbitrary CPI)
 - [ ] Do not pass extra writable or signer privileges to callees
 - [ ] Ensure invoke_signed seeds are correct and canonical
-- [ ] **Reload accounts after CPIs if they were modified**
 
 ### Arithmetic and Invariants
 - [ ] Use checked math (`checked_add`, `checked_sub`, `checked_mul`, `checked_div`)
-- [ ] Avoid unchecked casts (`as` without bounds checking)
+- [ ] Avoid unchecked casts
 - [ ] Re-validate state after CPIs when required
-- [ ] Validate division operations (check for zero denominator)
-- [ ] Use saturating operations only when semantically correct
 
 ### State Lifecycle
 - [ ] Close accounts securely (mark discriminator, drain lamports)
 - [ ] Avoid leaving "zombie" accounts with lamports
 - [ ] Gate upgrades and ownership transfers
 - [ ] Prevent reinitialization of existing accounts
-- [ ] Store canonical PDA bumps (don't recalculate)
-
-### Oracle and External Data
-- [ ] Validate oracle data freshness
-- [ ] Use multiple oracle sources for critical operations
-- [ ] Implement price bands/circuit breakers
-- [ ] Consider TWAP for DeFi applications
 
 ---
 
 ## Client-Side Checklist
 
-### Transaction Handling
 - [ ] Cluster awareness: never hardcode mainnet endpoints in dev flows
-- [ ] Simulate transactions before sending
+- [ ] Simulate transactions for UX where feasible
 - [ ] Handle blockhash expiry and retry with fresh blockhash
 - [ ] Treat "signature received" as not-final; track confirmation
-- [ ] Set appropriate compute unit limits based on simulation
-- [ ] Use priority fees during network congestion
-
-### Token Handling
 - [ ] Never assume token program variant; detect Token-2022 vs classic
-- [ ] Handle Token-2022 transfer fees in amount calculations
-- [ ] Validate mint decimals before displaying/calculating amounts
-- [ ] Check for frozen accounts before transfers
-
-### User Experience
+- [ ] Validate transaction simulation results before signing
 - [ ] Show clear error messages for common failure modes
-- [ ] Provide explorer links for transactions
-- [ ] Display confirmation status (processed/confirmed/finalized)
-- [ ] Handle wallet disconnection gracefully
-- [ ] Never expose private keys or seed phrases
-
-### Security
-- [ ] Validate all user input before transaction construction
-- [ ] Never trust client-side validation alone
-- [ ] Use secure randomness for client-side key generation
-- [ ] Implement rate limiting for sensitive operations
-- [ ] Log and monitor for suspicious patterns
 
 ---
 
 ## Security Review Questions
 
-Before deploying, answer these questions for each instruction:
-
-1. **Account Authenticity**: Can an attacker pass a fake account that passes validation?
-2. **Authorization**: Can an attacker call this instruction without proper authorization?
-3. **CPI Safety**: Can an attacker substitute a malicious program for CPI targets?
-4. **Reinitialization**: Can an attacker reinitialize an existing account?
-5. **PDA Isolation**: Can an attacker exploit shared PDAs across users?
-6. **Account Aliasing**: Can an attacker pass the same account for multiple parameters?
-7. **Revival**: Can an attacker revive a closed account in the same transaction?
-8. **Data Integrity**: Can an attacker exploit mismatches between stored and provided data?
-9. **Arithmetic**: Can arithmetic overflow/underflow lead to exploits?
-10. **Oracle Manipulation**: Can price/data feeds be manipulated?
-
----
-
-## Automated Security Tools
-
-### Static Analysis
-```bash
-# Soteria - Anchor vulnerability scanner
-soteria -analyzeAll .
-
-# Clippy with Solana-specific lints
-cargo clippy --all-features -- -D warnings
-```
-
-### Fuzz Testing
-```bash
-# Trident - property-based fuzzing
-trident fuzz run fuzz_0 --iterations 10000
-```
-
-### Audit Preparation
-- Run all automated tools
-- Document known limitations
-- Prepare test vectors for edge cases
-- Create threat model documentation
-
----
-
-## Common Attack Patterns Summary
-
-| Attack | Prevention |
-|--------|------------|
-| Fake account injection | Owner validation |
-| Unauthorized operations | Signer checks |
-| Malicious CPI targets | Program ID validation |
-| Account reinitialization | Init constraints, discriminator checks |
-| PDA collision | User-specific seeds |
-| Type confusion | Discriminators |
-| Account aliasing | Duplicate checks |
-| Revival attacks | Secure closure pattern |
-| Arithmetic exploits | Checked math |
-| Oracle manipulation | Freshness checks, TWAP |
+1. Can an attacker pass a fake account that passes validation?
+2. Can an attacker call this instruction without proper authorization?
+3. Can an attacker substitute a malicious program for CPI targets?
+4. Can an attacker reinitialize an existing account?
+5. Can an attacker exploit shared PDAs across users?
+6. Can an attacker pass the same account for multiple parameters?
+7. Can an attacker revive a closed account in the same transaction?
+8. Can an attacker exploit mismatches between stored and provided data?
