@@ -1,626 +1,349 @@
-# Testing Solana Programs
+# Testing Strategy (LiteSVM / Mollusk / Surfpool)
 
-## Testing Framework Hierarchy
+## Testing Pyramid
 
-| Framework | Type | Speed | Best For |
-|-----------|------|-------|----------|
-| **Mollusk** | Unit (per-IX) | Fastest | Single instruction isolation |
-| **LiteSVM** | Unit/Integration | Fast | Multi-instruction flows in-process |
-| **Trident** | Fuzz | Variable | Finding edge cases, security testing |
-| **Surfpool** | Integration | Medium | Mainnet state locally, realistic scenarios |
-| **solana-test-validator** | Integration | Slowest | Full RPC behavior, legacy tests |
+1. **Unit tests (fast)**: LiteSVM or Mollusk
+2. **Integration tests (realistic state)**: Surfpool
+3. **Cluster smoke tests**: devnet/testnet/mainnet as needed
 
-## Quick Decision Guide
+## LiteSVM
 
-- **New project, unit tests**: Start with LiteSVM or Mollusk
-- **Critical financial logic**: Add Trident fuzz tests
-- **Testing against live state**: Use Surfpool
-- **Legacy test suite exists**: Keep solana-test-validator
+A lightweight Solana Virtual Machine that runs directly in your test process. Created by Aursen from Exotic Markets.
 
----
+### When to Use LiteSVM
 
-## Mollusk (Single-Instruction Unit Testing)
+- Fast execution without validator overhead
+- Direct account state manipulation
+- Built-in performance profiling
+- Multi-language support (Rust, TypeScript, Python)
 
-Mollusk is ideal for testing individual instructions in isolation with minimal overhead.
+### Rust Setup
 
-### Setup
-
-```toml
-# Cargo.toml
-[dev-dependencies]
-mollusk-svm = "0.1"
+```bash
+cargo add --dev litesvm
 ```
 
-### Basic Usage
-
 ```rust
-#[cfg(test)]
-mod tests {
-    use mollusk_svm::Mollusk;
-    use solana_sdk::{
-        account::Account,
-        instruction::Instruction,
-        pubkey::Pubkey,
-    };
-
-    #[test]
-    fn test_initialize_instruction() {
-        let program_id = Pubkey::new_unique();
-        let mollusk = Mollusk::new(&program_id, "target/deploy/my_program");
-
-        let authority = Pubkey::new_unique();
-        let (vault_pda, bump) = Pubkey::find_program_address(
-            &[b"vault", authority.as_ref()],
-            &program_id,
-        );
-
-        // Create accounts
-        let authority_account = (
-            authority,
-            Account {
-                lamports: 1_000_000_000,
-                ..Account::default()
-            },
-        );
-
-        let vault_account = (
-            vault_pda,
-            Account {
-                lamports: 0,
-                owner: system_program::ID,
-                ..Account::default()
-            },
-        );
-
-        // Build instruction
-        let mut ix_data = vec![0u8]; // discriminator
-        ix_data.extend_from_slice(&1000u64.to_le_bytes());
-
-        let instruction = Instruction {
-            program_id,
-            accounts: vec![
-                AccountMeta::new(authority, true),
-                AccountMeta::new(vault_pda, false),
-            ],
-            data: ix_data,
-        };
-
-        // Execute
-        let result = mollusk.process_instruction(
-            &instruction,
-            &[authority_account, vault_account],
-        );
-
-        assert!(result.program_result.is_ok());
-    }
-}
-```
-
-### CU Benchmarking with Mollusk
-
-Track compute unit usage over time:
-
-```rust
-use mollusk_svm::MolluskComputeUnitBencher;
+use litesvm::LiteSVM;
+use solana_sdk::{pubkey::Pubkey, signature::Keypair, transaction::Transaction};
 
 #[test]
-fn bench_instructions() {
-    let program_id = Pubkey::new_unique();
-    let mollusk = Mollusk::new(&program_id, "target/deploy/my_program");
-
-    let bencher = MolluskComputeUnitBencher::new(mollusk)
-        .must_pass(true)
-        .out_dir("../target/benches");
-
-    // Bench different instructions
-    bencher.bench("initialize", &init_ix, &init_accounts);
-    bencher.bench("deposit", &deposit_ix, &deposit_accounts);
-    bencher.bench("withdraw", &withdraw_ix, &withdraw_accounts);
-
-    // Generates markdown report with CU usage and deltas vs previous runs
-}
-```
-
----
-
-## LiteSVM (Fast Multi-Instruction Testing)
-
-LiteSVM is a lightweight SVM implementation for running multiple instructions in sequence.
-
-### Setup
-
-```toml
-# Cargo.toml
-[dev-dependencies]
-litesvm = "0.3"
-```
-
-### Basic Usage
-
-```rust
-#[cfg(test)]
-mod tests {
-    use litesvm::LiteSVM;
-    use solana_sdk::{
-        signature::{Keypair, Signer},
-        transaction::Transaction,
-    };
-
-    #[test]
-    fn test_program_flow() {
-        // Create SVM instance
-        let mut svm = LiteSVM::new();
-
-        // Fund authority
-        let authority = Keypair::new();
-        svm.airdrop(&authority.pubkey(), 10 * LAMPORTS_PER_SOL).unwrap();
-
-        // Deploy program
-        let program_id = Pubkey::new_unique();
-        let program_bytes = std::fs::read("target/deploy/my_program.so").unwrap();
-        svm.add_program(program_id, &program_bytes);
-
-        // Build and send transaction
-        let tx = Transaction::new_signed_with_payer(
-            &[initialize_ix(&program_id, &authority.pubkey())],
-            Some(&authority.pubkey()),
-            &[&authority],
-            svm.latest_blockhash(),
-        );
-
-        let result = svm.send_transaction(tx);
-        assert!(result.is_ok());
-
-        // Verify state
-        let account = svm.get_account(&vault_pda).unwrap();
-        assert!(account.is_some());
-    }
-
-    #[test]
-    fn test_multi_step_flow() {
-        let mut svm = LiteSVM::new();
-        let authority = Keypair::new();
-        svm.airdrop(&authority.pubkey(), 10 * LAMPORTS_PER_SOL).unwrap();
-
-        // Step 1: Initialize
-        let tx1 = build_init_tx(&svm, &authority);
-        svm.send_transaction(tx1).unwrap();
-
-        // Step 2: Deposit
-        let tx2 = build_deposit_tx(&svm, &authority, 1_000_000_000);
-        svm.send_transaction(tx2).unwrap();
-
-        // Step 3: Withdraw
-        let tx3 = build_withdraw_tx(&svm, &authority, 500_000_000);
-        svm.send_transaction(tx3).unwrap();
-
-        // Verify final state
-        let vault = fetch_vault_account(&svm, &authority.pubkey());
-        assert_eq!(vault.balance, 500_000_000);
-    }
-}
-```
-
-### Time Manipulation
-
-```rust
-#[test]
-fn test_time_locked_withdrawal() {
+fn test_deposit() {
     let mut svm = LiteSVM::new();
-    
-    // Setup...
-    
-    // Try to withdraw before lock expires
-    let result = svm.send_transaction(withdraw_tx.clone());
-    assert!(result.is_err());
-    
-    // Advance time by 1 day
-    svm.warp_to_slot(svm.get_slot() + (24 * 60 * 60 / 400)); // ~400ms slots
-    
-    // Now withdrawal should succeed
-    let result = svm.send_transaction(withdraw_tx);
+
+    // Load your program
+    let program_id = pubkey!("YourProgramId11111111111111111111111111111");
+    svm.add_program_from_file(program_id, "target/deploy/program.so");
+
+    // Create accounts
+    let payer = Keypair::new();
+    svm.airdrop(&payer.pubkey(), 1_000_000_000).unwrap();
+
+    // Build and send transaction
+    let tx = Transaction::new_signed_with_payer(
+        &[/* instructions */],
+        Some(&payer.pubkey()),
+        &[&payer],
+        svm.latest_blockhash(),
+    );
+
+    let result = svm.send_transaction(tx);
     assert!(result.is_ok());
 }
 ```
 
----
-
-## Trident (Fuzz Testing)
-
-Trident uses AFL/libfuzzer to find edge cases in your program logic.
-
-### Setup
+### TypeScript Setup
 
 ```bash
-cargo install trident-cli
-trident init
+npm i --save-dev litesvm
 ```
 
-### Configuration
+```typescript
+import { LiteSVM } from 'litesvm';
+import { PublicKey, Transaction, Keypair } from '@solana/web3.js';
 
-```toml
-# Trident.toml
-[fuzz]
-fuzzing_with_stats = true
-allow_duplicate_txs = false
-programs_data = ["target/deploy/my_program.so"]
+const programId = new PublicKey("YourProgramId11111111111111111111111111111");
+const svm = new LiteSVM();
+svm.addProgramFromFile(programId, "target/deploy/program.so");
 
-[fuzz.test]
-iterations = 10000
-exit_upon_crash = true
+// Build transaction
+const tx = new Transaction();
+tx.recentBlockhash = svm.latestBlockhash();
+tx.add(/* instructions */);
+tx.sign(payer);
+
+// Simulate first (optional)
+const simulation = svm.simulateTransaction(tx);
+
+// Execute
+const result = svm.sendTransaction(tx);
 ```
 
-### Fuzz Test Definition
+### Account Types in LiteSVM
+
+**System Accounts:**
+- Payer accounts (contain lamports)
+- Uninitialized accounts (empty, awaiting setup)
+
+**Program Accounts:**
+- Serialize with `borsh`, `bincode`, or `solana_program_pack`
+- Calculate rent-exempt minimum balance
+
+**Token Accounts:**
+- Use `spl_token::state::Mint` and `spl_token::state::Account`
+- Serialize with Pack trait
+
+### Advanced LiteSVM Features
 
 ```rust
-// trident-tests/fuzz_tests/fuzz_0/test_fuzz.rs
-use trident_fuzz::fuzzing::*;
-use my_program::*;
+// Modify clock sysvar
+svm.set_sysvar(&Clock { slot: 1000, .. });
 
-#[derive(Arbitrary, Debug)]
-pub struct InitializeData {
-    pub amount: u64,
-}
+// Warp to slot
+svm.warp_to_slot(5000);
 
-impl FuzzDataBuilder<InitializeData> for MyProgramFuzzContext {
-    fn build(
-        &self,
-        u: &mut arbitrary::Unstructured,
-    ) -> arbitrary::Result<InitializeData> {
-        Ok(InitializeData {
-            amount: u.arbitrary()?,
-        })
-    }
-}
+// Configure compute budget
+svm.set_compute_budget(ComputeBudget { max_units: 400_000, .. });
 
-#[flow]
-impl<'info> InstructionFlow<InitializeData, Initialize<'info>> for MyProgramFuzzContext {
-    fn instruction(
-        &mut self,
-        accounts: &Initialize<'info>,
-        data: &InitializeData,
-    ) -> Result<()> {
-        // Fuzz instruction with arbitrary data
-        my_program::instructions::initialize(
-            accounts,
-            data.amount,
-        )
-    }
-}
+// Toggle signature verification (useful for testing)
+svm.with_sigverify(false);
 
-#[invariant]
-fn vault_balance_invariant(ctx: &MyProgramFuzzContext) -> bool {
-    // Invariant: vault balance should never exceed total deposits
-    let vault = ctx.get_vault_account();
-    let total_deposits = ctx.get_total_deposits();
-    vault.balance <= total_deposits
-}
+// Check compute units used
+let result = svm.send_transaction(tx)?;
+println!("CUs used: {}", result.compute_units_consumed);
 ```
 
-### Running Fuzz Tests
+## Mollusk
 
-```bash
-# Run fuzz tests
-trident fuzz run fuzz_0
+A lightweight test harness providing direct interface to program execution without full validator runtime. Best for Rust-only testing with fine-grained control.
 
-# With coverage
-trident fuzz run fuzz_0 --coverage
+### When to Use Mollusk
 
-# View crash reports
-ls trident-tests/fuzz_tests/fuzz_0/crashes/
-```
-
-### Critical Paths to Fuzz
-
-1. **Arithmetic operations**: Overflow, underflow, division
-2. **Access control**: Authority checks, signer validation
-3. **Token transfers**: Amount calculations, fee handling
-4. **PDA derivation**: Seed collision, bump handling
-5. **Account state transitions**: Initialization, closure, reallocation
-
----
-
-## Surfpool (Mainnet State Locally)
-
-Surfpool maintains a local copy of mainnet/devnet state for realistic testing.
+- Fast execution for rapid development cycles
+- Precise account state manipulation for edge cases
+- Detailed performance metrics and CU benchmarking
+- Custom syscall testing
 
 ### Setup
 
 ```bash
-# Install Surfpool
-cargo install surfpool-cli
+cargo add --dev mollusk-svm
+cargo add --dev mollusk-svm-programs-token  # For SPL token helpers
+cargo add --dev solana-sdk solana-program
+```
 
-# Clone mainnet state for specific accounts
-surfpool clone mainnet --accounts ./accounts.json
+### Basic Usage
 
-# Start local environment with cloned state
+```rust
+use mollusk_svm::Mollusk;
+use mollusk_svm::result::Check;
+use solana_sdk::{account::Account, pubkey::Pubkey, instruction::Instruction};
+
+#[test]
+fn test_instruction() {
+    let program_id = Pubkey::new_unique();
+    let mollusk = Mollusk::new(&program_id, "target/deploy/program");
+
+    // Create accounts
+    let payer = (
+        Pubkey::new_unique(),
+        Account {
+            lamports: 1_000_000_000,
+            data: vec![],
+            owner: solana_sdk::system_program::ID,
+            executable: false,
+            rent_epoch: 0,
+        },
+    );
+
+    // Build instruction
+    let instruction = Instruction {
+        program_id,
+        accounts: vec![/* account metas */],
+        data: vec![/* instruction data */],
+    };
+
+    // Execute with validation
+    mollusk.process_and_validate_instruction(
+        &instruction,
+        &[payer],
+        &[
+            Check::success(),
+            Check::compute_units(50_000),
+        ],
+    );
+}
+```
+
+### Token Program Helpers
+
+```rust
+use mollusk_svm_programs_token::token;
+
+// Add token program to test environment
+token::add_program(&mut mollusk);
+
+// Create pre-configured token accounts
+let mint_account = token::mint_account(decimals, supply, mint_authority);
+let token_account = token::token_account(mint, owner, amount);
+```
+
+### CU Benchmarking
+
+```rust
+use mollusk_svm::MolluskComputeUnitBencher;
+
+let bencher = MolluskComputeUnitBencher::new(mollusk)
+    .must_pass(true)
+    .out_dir("../target/benches");
+
+bencher.bench(
+    "deposit_instruction",
+    &instruction,
+    &accounts,
+);
+// Generates markdown report with CU usage and deltas
+```
+
+### Advanced Configuration
+
+```rust
+// Set compute budget
+mollusk.set_compute_budget(200_000);
+
+// Enable all feature flags
+mollusk.set_feature_set(FeatureSet::all_enabled());
+
+// Customize sysvars
+mollusk.sysvars.clock = Clock {
+    slot: 1000,
+    epoch: 5,
+    unix_timestamp: 1700000000,
+    ..Default::default()
+};
+```
+
+## Surfpool
+
+SDK and tooling suite for integration testing with realistic cluster state. Surfnet is the local network component (drop-in replacement for solana-test-validator).
+
+### When to Use Surfpool
+
+- Complex CPIs requiring mainnet programs (e.g., Jupiter with 40+ accounts)
+- Testing against realistic account state
+- Time travel and block manipulation
+- Account/program cloning between environments
+
+### Setup
+
+```bash
+# Install Surfpool CLI
+cargo install surfpool
+
+# Start local Surfnet
 surfpool start
 ```
 
-### accounts.json Example
-
-```json
-{
-  "accounts": [
-    "So11111111111111111111111111111111111111112",
-    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    "YOUR_PROGRAM_ID"
-  ],
-  "programs": [
-    "YOUR_PROGRAM_ID"
-  ]
-}
-```
-
-### Testing Against Live State
+### Connection Setup
 
 ```typescript
-import { Connection, PublicKey } from '@solana/web3.js';
+import { Connection } from '@solana/web3.js';
 
-describe('Integration with Mainnet State', () => {
-  const connection = new Connection('http://localhost:8899'); // Surfpool
-
-  it('should interact with real token accounts', async () => {
-    // Real USDC mint
-    const usdcMint = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
-    
-    const mintInfo = await connection.getAccountInfo(usdcMint);
-    expect(mintInfo).toBeDefined();
-    
-    // Your integration tests here...
-  });
-});
+const connection = new Connection("http://localhost:8899", "confirmed");
 ```
 
----
+### System Variable Control
 
-## CI Integration
+```typescript
+// Time travel to specific slot
+await connection._rpcRequest('surfnet_timeTravel', [{
+    absoluteSlot: 250000000
+}]);
 
-### GitHub Actions Workflow
+// Pause/resume block production
+await connection._rpcRequest('surfnet_pauseClock', []);
+await connection._rpcRequest('surfnet_resumeClock', []);
+```
+
+### Account Manipulation
+
+```typescript
+// Set account state
+await connection._rpcRequest('surfnet_setAccount', [{
+    pubkey: accountPubkey.toString(),
+    lamports: 1000000000,
+    data: Buffer.from(accountData).toString('base64'),
+    owner: programId.toString(),
+}]);
+
+// Set token account
+await connection._rpcRequest('surfnet_setTokenAccount', [{
+    pubkey: tokenAccountPubkey.toString(),
+    mint: mintPubkey.toString(),
+    owner: ownerPubkey.toString(),
+    amount: "1000000",
+}]);
+
+// Clone account from another program
+await connection._rpcRequest('surfnet_cloneProgramAccount', [{
+    source: sourceProgramId.toString(),
+    destination: destProgramId.toString(),
+    account: accountPubkey.toString(),
+}]);
+```
+
+### SOL Supply Configuration
+
+```typescript
+// Configure supply for economic edge case testing
+await connection._rpcRequest('surfnet_setSupply', [{
+    circulating: "500000000000000000",
+    nonCirculating: "100000000000000000",
+    total: "600000000000000000",
+}]);
+```
+
+## Test Layout Recommendation
+
+```
+tests/
+├── unit/
+│   ├── deposit.rs      # LiteSVM or Mollusk
+│   ├── withdraw.rs
+│   └── mod.rs
+├── integration/
+│   ├── full_flow.rs    # Surfpool
+│   └── mod.rs
+└── fixtures/
+    └── accounts.rs     # Shared test account setup
+```
+
+## CI Guidance
 
 ```yaml
-name: Test Solana Program
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Run unit tests
+        run: cargo test-sbf
 
-      - name: Install Rust
-        uses: dtolnay/rust-action@stable
-
-      - name: Install Solana CLI
-        run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-
-      - name: Cache dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Build program
-        run: cargo build-sbf
-
-      - name: Run unit tests (Mollusk/LiteSVM)
-        run: cargo test --lib
-
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Surfpool
+        run: surfpool start --background
       - name: Run integration tests
-        run: cargo test --test '*'
-
-  fuzz:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Trident
-        run: cargo install trident-cli
-
-      - name: Run fuzz tests (limited iterations for CI)
-        run: trident fuzz run-all --iterations 1000
-
-      - name: Upload crash reports
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fuzz-crashes
-          path: trident-tests/fuzz_tests/**/crashes/
-
-  benchmark:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run CU benchmarks
-        run: cargo test --test bench -- --nocapture
-
-      - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
-        with:
-          name: cu-benchmarks
-          path: target/benches/*.md
+        run: cargo test --test integration
 ```
-
----
-
-## Test Organization
-
-### Recommended Structure
-
-```
-programs/my-program/
-├── src/
-│   └── lib.rs
-├── tests/
-│   ├── common/
-│   │   └── mod.rs          # Shared test utilities
-│   ├── unit/
-│   │   ├── initialize.rs   # Mollusk unit tests
-│   │   ├── deposit.rs
-│   │   └── withdraw.rs
-│   └── integration/
-│       └── full_flow.rs    # LiteSVM integration tests
-└── trident-tests/
-    └── fuzz_tests/
-        └── fuzz_0/
-            └── test_fuzz.rs
-```
-
-### Common Test Utilities
-
-```rust
-// tests/common/mod.rs
-use solana_sdk::{pubkey::Pubkey, signature::Keypair};
-
-pub fn setup_test_accounts(program_id: &Pubkey) -> TestAccounts {
-    let authority = Keypair::new();
-    let (vault_pda, bump) = Pubkey::find_program_address(
-        &[b"vault", authority.pubkey().as_ref()],
-        program_id,
-    );
-    
-    TestAccounts {
-        authority,
-        vault_pda,
-        vault_bump: bump,
-    }
-}
-
-pub struct TestAccounts {
-    pub authority: Keypair,
-    pub vault_pda: Pubkey,
-    pub vault_bump: u8,
-}
-```
-
----
-
-## Coverage and Reporting
-
-### Code Coverage with cargo-llvm-cov
-
-```bash
-# Install
-cargo install cargo-llvm-cov
-
-# Run with coverage
-cargo llvm-cov --lib --html
-
-# Open report
-open target/llvm-cov/html/index.html
-```
-
-### Minimum Coverage Requirements
-
-- **Critical paths** (token transfers, access control): 100%
-- **Happy paths**: 90%+
-- **Error paths**: 80%+
-- **Edge cases**: Handled by fuzz testing
-
----
 
 ## Best Practices
 
-### 1. Test Both Success and Failure
-
-```rust
-#[test]
-fn test_unauthorized_withdrawal() {
-    let mut svm = LiteSVM::new();
-    let owner = Keypair::new();
-    let attacker = Keypair::new();
-    
-    // Setup vault owned by `owner`
-    
-    // Attacker tries to withdraw
-    let tx = build_withdraw_tx(&svm, &attacker, vault_pda, 100);
-    let result = svm.send_transaction(tx);
-    
-    assert!(result.is_err());
-    assert!(result.unwrap_err().to_string().contains("Unauthorized"));
-}
-```
-
-### 2. Test Boundary Conditions
-
-```rust
-#[test]
-fn test_deposit_boundary_conditions() {
-    let mut svm = LiteSVM::new();
-    
-    // Zero amount
-    let result = deposit(&mut svm, 0);
-    assert!(result.is_err());
-    
-    // Max u64
-    let result = deposit(&mut svm, u64::MAX);
-    assert!(result.is_err()); // Should overflow or hit rent limits
-    
-    // Just under overflow threshold
-    let result = deposit(&mut svm, u64::MAX - 1000);
-    assert!(result.is_err());
-}
-```
-
-### 3. Test State Consistency
-
-```rust
-#[test]
-fn test_state_consistency_after_error() {
-    let mut svm = LiteSVM::new();
-    let authority = Keypair::new();
-    
-    // Setup with initial balance
-    initialize_vault(&mut svm, &authority, 1000);
-    
-    let state_before = get_vault_state(&svm, &authority);
-    
-    // Attempt invalid operation
-    let result = withdraw(&mut svm, &authority, 9999);
-    assert!(result.is_err());
-    
-    // State should be unchanged
-    let state_after = get_vault_state(&svm, &authority);
-    assert_eq!(state_before, state_after);
-}
-```
-
-### 4. Use Property-Based Testing
-
-```rust
-use proptest::prelude::*;
-
-proptest! {
-    #[test]
-    fn deposit_then_withdraw_preserves_balance(
-        deposit_amount in 1u64..1_000_000_000,
-        withdraw_amount in 1u64..1_000_000_000,
-    ) {
-        prop_assume!(withdraw_amount <= deposit_amount);
-        
-        let mut svm = setup_test_svm();
-        let authority = Keypair::new();
-        
-        deposit(&mut svm, &authority, deposit_amount).unwrap();
-        withdraw(&mut svm, &authority, withdraw_amount).unwrap();
-        
-        let final_balance = get_balance(&svm, &authority);
-        assert_eq!(final_balance, deposit_amount - withdraw_amount);
-    }
-}
-```
-
----
-
-**Sources:**
-- [Mollusk GitHub](https://github.com/buffalojoec/mollusk)
-- [LiteSVM GitHub](https://github.com/LiteSVM/litesvm)
-- [Trident Documentation](https://ackee.xyz/trident/docs/latest/)
-- [Surfpool Guide](https://www.helius.dev/blog/surfpool)
+- Keep unit tests as the default CI gate (fast feedback)
+- Use deterministic PDAs and seeded keypairs for reproducibility
+- Minimize fixtures; prefer programmatic account creation
+- Profile CU usage during development to catch regressions
+- Run integration tests in separate CI stage to control runtime
