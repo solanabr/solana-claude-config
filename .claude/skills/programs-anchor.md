@@ -1,397 +1,348 @@
-# Programs with Anchor (default choice)
+# Anchor Framework Skill
 
-## When to use Anchor
+## Project Structure
 
-Use Anchor by default when:
-- You want fast iteration with reduced boilerplate
-- You want an IDL and TypeScript client story out of the box
-- You want mature testing and workspace tooling
-- You need built-in security through automatic account validation
-
-## Core Advantages
-- **Reduced Boilerplate**: Abstracts repetitive account management, instruction serialization, and error handling
-- **Built-in Security**: Automatic account-ownership verification and data validation
-- **IDL Generation**: Automatic interface definition for client generation
-
-## Core Macros
-
-### `declare_id!()`
-Declares the onchain address where the program resides—a unique public key derived from the project's keypair.
-
-### `#[program]`
-Marks the module containing every instruction entrypoint and business-logic function.
-
-### `#[derive(Accounts)]`
-Lists accounts an instruction requires and automatically enforces their constraints:
-- Declares all necessary accounts for specific instructions
-- Enforces constraint checks automatically to block bugs and exploits
-- Generates helper methods for safe account access and mutation
-
-### `#[error_code]`
-Enables custom, human-readable error types with `#[msg(...)]` attributes for clearer debugging.
-
-## Account Types
-
-| Type | Purpose |
-|------|---------|
-| `Signer<'info>` | Verifies the account signed the transaction |
-| `SystemAccount<'info>` | Confirms System Program ownership |
-| `Program<'info, T>` | Validates executable program accounts |
-| `Account<'info, T>` | Typed program account with automatic validation |
-| `UncheckedAccount<'info>` | Raw account requiring manual validation |
-
-## Account Constraints
-
-### Initialization
-```rust
-#[account(
-    init,
-    payer = payer,
-    space = 8 + CustomAccount::INIT_SPACE
-)]
-pub account: Account<'info, CustomAccount>,
+```
+my-program/
+├── Anchor.toml           # Workspace config
+├── programs/
+│   └── my-program/
+│       ├── Cargo.toml
+│       └── src/
+│           ├── lib.rs           # Entry point
+│           ├── instructions/    # Instruction handlers
+│           │   ├── mod.rs
+│           │   ├── initialize.rs
+│           │   └── transfer.rs
+│           ├── state/           # Account structures
+│           │   ├── mod.rs
+│           │   └── vault.rs
+│           └── error.rs         # Error codes
+├── tests/
+│   └── my-program.ts     # Integration tests
+└── target/
+    └── idl/              # Generated IDL
 ```
 
-### PDA Validation with Stored Bump
-```rust
-#[account(
-    seeds = [b"vault", owner.key().as_ref()],
-    bump = vault.bump,  // Use stored bump, not recalculate
-)]
-pub vault: Account<'info, Vault>,
+## Version Management
+
+### AVM (Anchor Version Manager)
+```bash
+# Install AVM
+cargo install --git https://github.com/coral-xyz/anchor avm
+
+# Install specific version
+avm install 0.32.0
+avm use 0.32.0
+
+# Check version
+anchor --version
 ```
 
-### Ownership and Relationships
-```rust
-#[account(
-    has_one = authority @ CustomError::InvalidAuthority,
-    constraint = account.is_active @ CustomError::AccountInactive
-)]
-pub account: Account<'info, CustomAccount>,
+### Anchor.toml Configuration
+```toml
+[toolchain]
+anchor_version = "0.32.0"
+solana_version = "2.0.0"
+
+[features]
+seeds = true
+skip-lint = false
+
+[programs.localnet]
+my_program = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[programs.devnet]
+my_program = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 ```
 
-### Reallocation
+## Testing Strategy
+
+### Testing Pyramid
+
+1. **Unit Tests (Mollusk)** - Individual instructions, fastest
+2. **Integration Tests (LiteSVM)** - Full transaction simulation
+3. **Fuzz Tests (Trident)** - Edge cases, random inputs
+4. **E2E Tests (anchor test)** - Full validator, TypeScript
+
+### Mollusk (Unit Testing)
 ```rust
-#[account(
-    mut,
-    realloc = new_space,
-    realloc::payer = payer,
-    realloc::zero = true  // Clear old data when shrinking
-)]
-pub account: Account<'info, CustomAccount>,
-```
+#[cfg(test)]
+mod tests {
+    use mollusk_svm::Mollusk;
 
-### Closing Accounts
-```rust
-#[account(
-    mut,
-    close = destination
-)]
-pub account: Account<'info, CustomAccount>,
-```
+    #[test]
+    fn test_initialize() {
+        let program_id = Pubkey::new_unique();
+        let mollusk = Mollusk::new(&program_id, "target/deploy/program");
 
-## Account Discriminators
+        let authority = Pubkey::new_unique();
+        let (vault, _bump) = Pubkey::find_program_address(
+            &[b"vault", authority.as_ref()],
+            &program_id
+        );
 
-Default discriminators use `sha256("account:<StructName>")[0..8]`. Custom discriminators (Anchor 0.31+):
+        let instruction = initialize(/* ... */);
+        let result = mollusk.process_instruction(&instruction, &accounts);
 
-```rust
-#[account(discriminator = 1)]
-pub struct Escrow { ... }
-```
-
-**Constraints:**
-- Discriminators must be unique across your program
-- Using `[1]` prevents using `[1, 2, ...]` which also start with `1`
-- `[0]` conflicts with uninitialized accounts
-
-## Canonical Bump Pattern (CRITICAL)
-
-**Always store the canonical bump to save ~1500 CU per PDA access:**
-
-```rust
-#[account]
-#[derive(InitSpace)]
-pub struct Vault {
-    pub authority: Pubkey,  // 32
-    pub bump: u8,           // 1 - ALWAYS STORE THIS!
-    pub balance: u64,       // 8
-}
-
-// Initialize with canonical bump
-pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-    let vault = &mut ctx.accounts.vault;
-    vault.authority = ctx.accounts.authority.key();
-    vault.bump = ctx.bumps.vault;  // Store canonical bump
-    vault.balance = 0;
-    Ok(())
-}
-
-// Use stored bump for CPIs (saves ~1500 CU vs find_program_address)
-pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
-    let authority = ctx.accounts.vault.authority;
-    let seeds = &[
-        b"vault",
-        authority.as_ref(),
-        &[ctx.accounts.vault.bump],  // Use stored bump!
-    ];
-    let signer_seeds = &[&seeds[..]];
-
-    // CPI with stored bump
-    token::transfer(
-        CpiContext::new_with_signer(/* ... */, signer_seeds),
-        amount,
-    )?;
-    Ok(())
+        assert!(result.program_result.is_ok());
+    }
 }
 ```
 
-## Cross-Program Invocations (CPIs)
-
-### Basic CPI
+### LiteSVM (Integration Testing)
 ```rust
-let cpi_accounts = Transfer {
-    from: ctx.accounts.from.to_account_info(),
-    to: ctx.accounts.to.to_account_info(),
-};
-let cpi_program = ctx.accounts.system_program.to_account_info();
-let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+use litesvm::LiteSVM;
 
-transfer(cpi_ctx, amount)?;
-```
+#[test]
+fn test_full_flow() {
+    let mut svm = LiteSVM::new();
+    svm.add_program(program_id, &program_bytes);
 
-### PDA-Signed CPIs
-```rust
-let seeds = &[b"vault".as_ref(), &[ctx.bumps.vault]];
-let signer = &[&seeds[..]];
-let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer);
-```
-
-### CRITICAL: Account Reloading After CPIs
-
-**Anchor doesn't automatically update deserialized accounts after a CPI. Without `.reload()`, you have stale data!**
-
-```rust
-pub fn complex_operation(ctx: Context<ComplexOp>, amount: u64) -> Result<()> {
-    // Before CPI: balance = 100
-    msg!("Balance before: {}", ctx.accounts.token_account.amount);
-
-    // Execute CPI that modifies the account
-    token::transfer(cpi_ctx, amount)?;
-
-    // WITHOUT RELOAD: balance still shows 100 (STALE DATA!)
-    // WITH RELOAD: balance shows correct updated value
-
-    ctx.accounts.token_account.reload()?;  // CRITICAL!
-    msg!("Balance after: {}", ctx.accounts.token_account.amount);
-
-    // Now safe to use updated balance
-    require!(
-        ctx.accounts.token_account.amount >= MIN_BALANCE,
-        ErrorCode::BalanceTooLow
-    );
-
-    Ok(())
+    // Execute transactions with full simulation
+    let result = svm.send_transaction(tx);
+    assert!(result.is_ok());
 }
 ```
 
-**When to reload:**
-- After ANY CPI that modifies an account you hold a reference to
-- Before making decisions based on account state post-CPI
-- When chaining multiple CPIs that affect the same accounts
-
-## Error Handling
-
+### Trident (Fuzz Testing)
 ```rust
-#[error_code]
-pub enum MyError {
-    #[msg("Custom error message")]
-    CustomError,
-    #[msg("Value too large: {0}")]
-    ValueError(u64),
-    #[msg("Arithmetic overflow")]
-    Overflow,
-    #[msg("Insufficient funds")]
-    InsufficientFunds,
-}
+// trident-tests/fuzz_tests/fuzz_0/fuzz_instructions.rs
+use trident_client::fuzzing::*;
 
-// Usage
-require!(value > 0, MyError::CustomError);
-require!(value < 100, MyError::ValueError(value));
-
-// Checked arithmetic
-vault.balance = vault.balance
-    .checked_add(amount)
-    .ok_or(MyError::Overflow)?;
-```
-
-## Token Accounts
-
-### SPL Token
-```rust
-#[account(
-    mint::decimals = 9,
-    mint::authority = authority,
-)]
-pub mint: Account<'info, Mint>,
-
-#[account(
-    mut,
-    associated_token::mint = mint,
-    associated_token::authority = owner,
-)]
-pub token_account: Account<'info, TokenAccount>,
-```
-
-### Token2022 Compatibility
-
-Use `InterfaceAccount` for dual compatibility with SPL Token and Token-2022:
-
-```rust
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
-
-pub mint: InterfaceAccount<'info, Mint>,
-pub token_account: InterfaceAccount<'info, TokenAccount>,
-pub token_program: Interface<'info, TokenInterface>,
-```
-
-**Token-2022 Extensions to be aware of:**
-- **Transfer Fees**: Fee deducted automatically, calculate net amounts
-- **Transfer Hooks**: Your program can be called on transfers
-- **Confidential Transfers**: Zero-knowledge proofs for private balances
-- **Non-Transferable**: Soulbound tokens
-
-## LazyAccount (Anchor 0.31+)
-
-Heap-allocated, read-only account access for efficient memory usage:
-
-```rust
-// Cargo.toml
-anchor-lang = { version = "0.31.1", features = ["lazy-account"] }
-
-// Usage
-pub account: LazyAccount<'info, CustomAccountType>,
-
-pub fn handler(ctx: Context<MyInstruction>) -> Result<()> {
-    let value = ctx.accounts.account.get_value()?;
-    Ok(())
-}
-```
-
-**Note:** LazyAccount is read-only. After CPIs, use `unload()` to refresh cached values.
-
-## Zero-Copy Accounts
-
-For accounts exceeding stack/heap limits:
-
-```rust
-#[account(zero_copy)]
-pub struct LargeAccount {
-    pub data: [u8; 10000],
-}
-```
-
-Accounts under 10,240 bytes use `init`; larger accounts require external creation then `zero` constraint initialization.
-
-## CU Optimization Tips
-
-### Store bumps (saves ~1500 CU per PDA)
-```rust
-pub struct Vault {
-    pub bump: u8,  // Always store!
-}
-```
-
-### Feature-gate debug logs
-```rust
-#[cfg(feature = "debug")]
-msg!("Debug: value = {}", value);
-```
-
-### Use InitSpace derive
-```rust
-#[account]
-#[derive(InitSpace)]
-pub struct User {
-    pub authority: Pubkey,      // 32
-    pub bump: u8,               // 1
-    #[max_len(50)]
-    pub name: String,           // 4 + 50
-}
-```
-
-## Event Emission
-
-```rust
-#[event]
-pub struct Transfer {
-    #[index]
-    pub from: Pubkey,
-    #[index]
-    pub to: Pubkey,
+#[derive(Arbitrary, Clone)]
+pub struct InitializeData {
     pub amount: u64,
-    pub timestamp: i64,
 }
 
-// Emit on state changes
-emit!(Transfer {
-    from: ctx.accounts.from.key(),
-    to: ctx.accounts.to.key(),
-    amount,
-    timestamp: Clock::get()?.unix_timestamp,
+impl FuzzTestExecutor<FuzzAccounts> for InitializeData {
+    fn run_fuzz(/* ... */) -> FuzzResult {
+        // Trident generates random inputs
+    }
+}
+```
+
+### TypeScript E2E Tests
+```typescript
+import * as anchor from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
+import { MyProgram } from "../target/types/my_program";
+
+describe("my-program", () => {
+  const provider = anchor.AnchorProvider.env();
+  anchor.setProvider(provider);
+
+  const program = anchor.workspace.MyProgram as Program<MyProgram>;
+
+  it("initializes vault", async () => {
+    const tx = await program.methods
+      .initialize()
+      .accounts({ /* ... */ })
+      .rpc();
+
+    console.log("Transaction signature:", tx);
+  });
 });
 ```
 
-## Security Best Practices
+## IDL and Client Generation
 
-### Account Validation
-- Use typed accounts (`Account<'info, T>`) over `UncheckedAccount` when possible
-- Always validate signer requirements explicitly
-- Use `has_one` for ownership relationships
-- Validate PDA seeds and bumps
-
-### CPI Safety
-- Use `Program<'info, T>` to validate CPI targets (prevents arbitrary CPI attacks)
-- Never pass extra privileges to CPI callees
-- Prefer explicit program IDs for known CPIs
-- **Always reload accounts after CPIs if they were modified**
-
-### Common Gotchas
-- **Avoid `init_if_needed`**: Permits reinitialization attacks
-- **Legacy IDL formats**: Ensure tooling agrees on format (pre-0.30 vs new spec)
-- **PDA seeds**: Ensure all seed material is stable and canonical
-
-## Testing
-
-- Use `anchor test` for end-to-end tests
-- Prefer Mollusk or LiteSVM for fast unit tests (see `testing.md`)
-- Use Trident for fuzz testing critical paths
-- Use Surfpool for integration tests with mainnet state
-
-## Verifiable Builds (MANDATORY for Mainnet)
-
+### IDL Generation
 ```bash
-# For mainnet deployments - ensures reproducible builds
-anchor build --verifiable
+# Build generates IDL automatically
+anchor build
 
-# Verify deployed program matches source
-anchor verify <program-id> --provider.cluster mainnet
+# IDL location
+target/idl/my_program.json
+target/types/my_program.ts
 ```
 
-## IDL and Clients
+### IDL Structure
+```json
+{
+  "version": "0.1.0",
+  "name": "my_program",
+  "instructions": [...],
+  "accounts": [...],
+  "types": [...],
+  "events": [...],
+  "errors": [...]
+}
+```
 
-- Treat the program's IDL as a product artifact
-- Prefer generating Kit-native clients via Codama (see `idl-codegen.md`)
-- If using Anchor TS client in Kit-first app, put it behind web3-compat boundary
+### Client Generation Options
 
-## Security Checklist (Per Instruction)
+| Tool | Output | Best For |
+|------|--------|----------|
+| Anchor TS | TypeScript | Anchor-native apps |
+| Codama | Kit-native | @solana/kit apps |
+| Kinobi | Multiple | Custom requirements |
 
-- [ ] All accounts validated (owner, signer, PDA)
-- [ ] Arithmetic uses checked operations
-- [ ] No `unwrap()` or `expect()` in program code
-- [ ] Error codes defined and descriptive
-- [ ] PDA bumps stored and reused
-- [ ] CPI targets validated (program IDs hardcoded or checked)
-- [ ] Accounts reloaded after CPI if they were modified
-- [ ] Events emitted for state changes
-- [ ] Proper access control enforced
-- [ ] Reentrancy protection considered
+### Codama Integration (Recommended for Kit)
+```bash
+# Generate Kit-native client from IDL
+npx codama generate --idl target/idl/my_program.json --out src/generated
+```
+
+```typescript
+// Usage with @solana/kit
+import { getMyProgramProgram } from './generated';
+
+const program = getMyProgramProgram(rpc);
+const ix = program.initialize({ /* ... */ });
+```
+
+### Anchor TypeScript Client
+```typescript
+import { Program, AnchorProvider } from "@coral-xyz/anchor";
+import { IDL, MyProgram } from "./idl/my_program";
+
+const provider = AnchorProvider.env();
+const program = new Program<MyProgram>(IDL, programId, provider);
+
+// Call instructions
+await program.methods.initialize().accounts({...}).rpc();
+
+// Fetch accounts
+const vault = await program.account.vault.fetch(vaultPda);
+
+// Subscribe to events
+program.addEventListener("Deposit", (event) => {
+  console.log("Deposit:", event);
+});
+```
+
+## Build and Deploy
+
+### Build Commands
+```bash
+# Standard build
+anchor build
+
+# Verifiable build (required for mainnet)
+anchor build --verifiable
+
+# Build specific program
+anchor build -p my_program
+```
+
+### Deployment Workflow
+
+```bash
+# 1. Deploy to localnet (automatic with anchor test)
+anchor test
+
+# 2. Deploy to devnet
+anchor deploy --provider.cluster devnet
+
+# 3. Verify deployment
+solana program show <PROGRAM_ID> --url devnet
+
+# 4. Deploy to mainnet (requires explicit confirmation)
+anchor deploy --provider.cluster mainnet-beta
+```
+
+### Upgrade Authority Management
+```bash
+# Check upgrade authority
+solana program show <PROGRAM_ID>
+
+# Transfer to multisig (recommended for mainnet)
+solana program set-upgrade-authority <PROGRAM_ID> \
+  --new-upgrade-authority <SQUADS_VAULT>
+
+# Make immutable (irreversible!)
+solana program set-upgrade-authority <PROGRAM_ID> --final
+```
+
+## Architecture Patterns
+
+### Single Program vs Multi-Program
+
+**Single Program:**
+- Simpler deployment
+- All state in one place
+- Better for small-medium apps
+
+**Multi-Program:**
+- Separation of concerns
+- Independent upgrades
+- Better for complex protocols
+- Requires careful CPI design
+
+### State Design Principles
+
+1. **Account per entity** - One PDA per user/vault/pool
+2. **Minimize account size** - Rent costs scale with size
+3. **Use discriminators** - Anchor handles this automatically
+4. **Plan for upgrades** - Leave room for new fields
+
+See `.claude/rules/anchor.md` for PDA bump storage patterns and CU optimization.
+
+### PDA Design
+
+```
+user_vault = [b"user_vault", user_pubkey]
+pool_state = [b"pool", pool_id]
+position = [b"position", pool_pubkey, user_pubkey]
+```
+
+**Rules:**
+- Use unique prefixes per account type
+- Include all identifying keys in seeds
+- Store bump in account data
+
+## Security Audit Process
+
+### Pre-Audit Checklist
+- [ ] All tests passing (unit + integration + fuzz)
+- [ ] No compiler warnings
+- [ ] `cargo clippy` clean
+- [ ] Manual review of all instructions
+
+### Automated Tools
+```bash
+# Clippy with all warnings
+cargo clippy -- -W clippy::all
+
+# Anchor verify
+anchor verify <PROGRAM_ID>
+
+# Soteria (if available)
+soteria analyze
+```
+
+For per-instruction security checklist and common anti-patterns, see `.claude/rules/anchor.md`.
+
+## Migration from Legacy
+
+### web3.js 1.x to Kit
+- Use Codama for client generation
+- Wrap Anchor client behind compatibility layer
+- Gradually migrate to Kit-native patterns
+
+### Native to Anchor
+- Start with account structures
+- Add Anchor constraints incrementally
+- Keep business logic, replace boilerplate
+
+## Resources
+
+- [Anchor Book](https://book.anchor-lang.com/)
+- [Anchor GitHub](https://github.com/coral-xyz/anchor)
+- [Anchor Examples](https://github.com/coral-xyz/anchor/tree/master/examples)
+- [Solana Cookbook - Anchor](https://solanacookbook.com/references/anchor.html)
+
+## When to Reference Rules
+
+For specific code patterns (account constraints, CPI syntax, error handling), reference `.claude/rules/anchor.md` which contains comprehensive code examples.

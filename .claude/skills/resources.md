@@ -47,10 +47,6 @@
 - [Mollusk Repository](https://github.com/buffalojoec/mollusk)
 - [mollusk-svm crate](https://crates.io/crates/mollusk-svm)
 
-### Trident (Fuzz Testing)
-- [Trident Documentation](https://ackee.xyz/trident/docs/latest/)
-- [Trident Repository](https://github.com/Ackee-Blockchain/trident)
-
 ### Surfpool
 - [Surfpool Documentation](https://docs.surfpool.dev/)
 - [Surfpool Repository](https://github.com/txtx/surfpool)
@@ -65,59 +61,17 @@
 - [SPL Token Documentation](https://spl.solana.com/token)
 - [Token-2022 Documentation](https://spl.solana.com/token-2022)
 - [Metaplex Documentation](https://developers.metaplex.com/)
-- [Bubblegum (Compressed NFTs)](https://developers.metaplex.com/bubblegum)
 
 ## Payments
 - [Commerce Kit Repository](https://github.com/solana-foundation/commerce-kit)
 - [Commerce Kit Documentation](https://commercekit.solana.com/)
-- [Solana Pay Specification](https://github.com/solana-labs/solana-pay)
 - [Kora Documentation](https://docs.kora.network/)
-
-## DeFi Protocols
-- [Jupiter Aggregator](https://jup.ag/) - Swap aggregation
-- [Raydium](https://raydium.io/) - AMM and CLMM
-- [Orca](https://www.orca.so/) - Whirlpools
-- [Marinade](https://marinade.finance/) - Liquid staking
-- [Kamino](https://app.kamino.finance/) - Lending/borrowing
-
-## Oracles
-- [Pyth Network](https://pyth.network/)
-- [Switchboard](https://switchboard.xyz/)
-
-## Infrastructure
-- [Helius](https://helius.xyz/) - RPC, DAS API, webhooks
-- [QuickNode](https://www.quicknode.com/) - RPC nodes
-- [Triton](https://triton.one/) - gRPC streaming
 
 ## Security
 - [Blueshift Program Security Course](https://learn.blueshift.gg/en/courses/program-security)
 - [Solana Security Best Practices](https://solana.com/docs/programs/security)
-- [Soteria (Static Analysis)](https://github.com/silas-x/soteria)
 
 ## Performance and Optimization
 - [Solana Optimized Programs](https://github.com/Laugharne/solana_optimized_programs)
 - [sBPF Assembly SDK](https://github.com/blueshift-gg/sbpf)
 - [Doppler Oracle (21 CU)](https://github.com/blueshift-gg/doppler)
-
-## Governance
-- [Realms (SPL Governance)](https://realms.today/)
-- [Squads Multisig](https://squads.so/)
-
-## Indexing
-- [Helius DAS API](https://docs.helius.dev/solana-apis/das-api)
-- [Yellowstone gRPC](https://github.com/rpcpool/yellowstone-grpc)
-- [Geyser Plugins](https://solana.com/docs/rpc/geyser)
-
-## Backend / Off-chain
-- [Axum Web Framework](https://github.com/tokio-rs/axum)
-- [Tower Middleware](https://github.com/tower-rs/tower)
-- [sqlx (Async PostgreSQL)](https://github.com/launchbadge/sqlx)
-
-## Validator and Infrastructure
-- [Jito](https://jito.network/) - MEV infrastructure
-- [Firedancer](https://jumpcrypto.com/firedancer/) - Validator client
-
-## Community
-- [Solana Stack Exchange](https://solana.stackexchange.com/)
-- [Solana Discord](https://discord.com/invite/solana)
-- [Solana Twitter](https://twitter.com/solana)

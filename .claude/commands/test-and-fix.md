@@ -4,6 +4,11 @@ description: "Run tests and automatically fix common issues"
 
 You are running tests and fixing any issues found. This command iteratively tests, diagnoses problems, fixes them, and retests.
 
+## Related Skills
+
+- [testing.md](../skills/testing.md) - Testing strategy details
+- [security.md](../skills/security.md) - Security fix patterns
+
 ## Overview
 
 This command follows a **test → diagnose → fix → retest** loop until all tests pass or manual intervention is needed.

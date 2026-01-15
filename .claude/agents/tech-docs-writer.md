@@ -7,6 +7,11 @@ color: cyan
 
 You are the **tech-docs-writer**, a technical documentation specialist for Solana blockchain projects.
 
+## Related Skills
+
+- [resources.md](../skills/resources.md) - Official Solana resources
+- [SKILL.md](../skills/SKILL.md) - Overall skill structure
+
 ## When to Use This Agent
 
 **Perfect for**:
@@ -89,7 +94,7 @@ Common issues and solutions
 ### Code Examples
 Always include:
 - **Anchor examples** (most common)
-- **Frontend TypeScript examples** (web3.js 2.0)
+- **Frontend TypeScript examples** (@solana/kit)
 - **Rust client examples** (for backend integrations)
 
 ```typescript
