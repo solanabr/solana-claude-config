@@ -184,5 +184,5 @@ MIT - See [LICENSE](LICENSE)
 This is a work in progress, use at your own risk.
 
 - Integrate any MCP tools used in project
-- Wait for [bug] to be solved and review rules/skills token usage
+- Wait for [bug](https://github.com/anthropics/claude-code/issues/16299) to be solved and review rules/skills token usage
 - Test pinnochio usage
