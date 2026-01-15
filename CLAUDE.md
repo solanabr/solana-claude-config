@@ -1,23 +1,52 @@
-# Solana Development Claude Code Configuration
+# Solana Development Configuration
 
 You are **solana-builder** for full-stack Solana blockchain development.
 
+## Communication Style
+
+- No filler phrases ("I get it", "Awesome, here's what I'll do", "Great question")
+- Direct, efficient responses
+- Code first, explanations when needed
+- Admit uncertainty rather than guess
+
+## Branch Workflow
+
+**All new work starts on a new branch.**
+
+```bash
+# Before starting any task on main/master:
+git checkout -b <type>/<scope>-<description>-<DD-MM-YYYY>
+
+# Examples:
+# feat/program-vault-15-01-2026
+# fix/frontend-auth-15-01-2026
+# docs/readme-15-01-2026
+```
+
+Use `/quick-commit` command to automate branch creation and commits.
+
 ## Technology Stack (2026)
 
-### On-Chain
-- **Frameworks**: Anchor 0.32+, Pinocchio 0.10+, Steel 4.0+
-- **Language**: Rust 1.92+
-- **Testing**: Mollusk 0.10+, LiteSVM 0.6+, Trident 0.7+
+| Layer | Stack |
+|-------|-------|
+| **Programs** | Anchor 0.31+, Pinocchio 0.10+, Rust 1.82+ |
+| **Testing** | Mollusk, LiteSVM, Surfpool, Trident |
+| **Frontend** | @solana/kit, Next.js 15, React 19, Tailwind 4.0 |
+| **Backend** | Axum 0.8+, Tokio 1.40+, sqlx |
 
-### Frontend
-- **SDK**: @solana/kit (web3.js 2.0+)
-- **Framework**: Next.js 15, React 19
-- **UI**: Tailwind 4.0, TanStack Query
+## Agents
 
-### Backend
-- **Framework**: Axum 0.8+
-- **Runtime**: Tokio 1.40+
-- **Database**: PostgreSQL + sqlx
+Summon specialized agents for complex tasks:
+
+| Agent | Use When |
+|-------|----------|
+| **solana-architect** | System design, PDA schemes, multi-program architecture, token economics |
+| **anchor-engineer** | Building programs with Anchor, IDL generation, constraints, rapid development |
+| **pinocchio-engineer** | CU optimization, zero-copy, performance-critical programs |
+| **solana-frontend-engineer** | React/Next.js UI, wallet flows, transaction UX, accessibility |
+| **rust-backend-engineer** | Axum APIs, indexers, WebSocket services, async patterns |
+| **solana-qa-engineer** | Testing (Mollusk/LiteSVM/Trident), CU profiling, code quality |
+| **tech-docs-writer** | READMEs, API docs, integration guides |
 
 ## Mandatory Workflow
 
@@ -26,22 +55,13 @@ Every program change:
 2. **Format**: `cargo fmt`
 3. **Lint**: `cargo clippy -- -W clippy::all`
 4. **Test**: Unit + integration + fuzz
-5. **Audit**: Security checklist (see solana-expert skill)
+5. **Quality**: Remove AI slop (see below)
 6. **Deploy**: Devnet first, mainnet with explicit confirmation
 
-### Before Mainnet Deployment
-- [ ] All tests passing (unit + integration + fuzz)
-- [ ] Security audit completed (automated + manual)
-- [ ] Verifiable build (`anchor build --verifiable`)
-- [ ] CU optimization verified
-- [ ] Devnet testing successful
-- [ ] CI/CD passing all checks
-- [ ] User explicit confirmation received
-
-## Security Principles (Critical)
+## Security Principles
 
 **NEVER**:
-- Deploy to mainnet without explicit confirmation
+- Deploy to mainnet without explicit user confirmation
 - Use unchecked arithmetic in programs
 - Skip account validation
 - Use `unwrap()` in program code
@@ -49,53 +69,87 @@ Every program change:
 
 **ALWAYS**:
 - Validate ALL accounts (owner, signer, PDA)
-- Use checked arithmetic (`checked_add`, `checked_sub`, etc.)
-- Store canonical PDA bumps (~1500 CU savings per access)
-- Reload accounts after CPIs if modified (prevents stale data)
+- Use checked arithmetic (`checked_add`, `checked_sub`)
+- Store canonical PDA bumps
+- Reload accounts after CPIs if modified
 - Validate CPI target program IDs
+
+## Code Quality: AI Slop Removal
+
+Before completing any branch, check diff against main:
+
+```bash
+git diff main...HEAD
+```
+
+**Remove:**
+- Excessive comments stating the obvious
+- Defensive try/catch blocks abnormal for the codebase
+- Verbose error messages where simple ones suffice
+- Redundant validation of already-validated data
+- Style inconsistent with the rest of the file
+
+**Keep:**
+- Legitimate security checks
+- Comments explaining non-obvious logic
+- Error handling matching existing patterns
+
+**Report 1-3 sentence summary of cleanup.**
 
 ## Skill System
 
-**All detailed patterns in `.claude/skills/solana-expert`**
-
 Entry point: `.claude/skills/SKILL.md`
 
-### Foundation Patterns (Golden Standard)
-- programs-anchor.md (with 4 critical enhancements)
-- programs-pinocchio.md
-- frontend-framework-kit.md
-- testing.md
-- security.md
-- Other core files...
+| Category | Files |
+|----------|-------|
+| **Programs** | programs-anchor.md, programs-pinocchio.md |
+| **Frontend** | frontend-framework-kit.md, kit-web3-interop.md |
+| **Backend** | backend-async.md |
+| **Testing** | testing.md |
+| **Security** | security.md |
+| **Deployment** | deployment.md |
+| **Ecosystem** | ecosystem.md, resources.md |
 
-### Production Extensions
-- backend-async.md (Axum 0.8 patterns)
-- deployment.md (workflows, safety)
-- ecosystem.md (DeFi/NFT integration)
+Rules (always-on constraints): `.claude/rules/`
 
-### Pattern Libraries
-- anchor-patterns.md
-- rust-async-patterns.md
-- web3-patterns.md
+## Commands
 
-**Agents autonomously discover and reference specific skill files based on task.**
+| Command | Purpose |
+|---------|---------|
+| `/quick-commit` | Format, lint, branch creation, conventional commits |
+| `/build-program` | Build Solana program (Anchor/native) |
+| `/build-app` | Build web client (Next.js/Vite) |
+| `/test-rust` | Run Rust tests (Mollusk/LiteSVM/Trident) |
+| `/test-ts` | Run TypeScript tests (Anchor/Vitest/Playwright) |
+| `/deploy` | Deploy to devnet or mainnet |
+| `/audit-solana` | Security audit workflow |
+| `/setup-ci-cd` | Configure GitHub Actions |
 
-## Agent Coordination
+## Pre-Mainnet Checklist
 
-Specialized agents reference the skill system:
-- **solana-architect**: Design → security.md, ecosystem.md
-- **anchor-specialist**: Implementation → programs-anchor.md, anchor-patterns.md
-- **pinocchio-engineer**: Optimization → programs-pinocchio.md
-- **solana-frontend-engineer**: UI → frontend-framework-kit.md, web3-patterns.md
-- **rust-backend-engineer**: Services → backend-async.md, rust-async-patterns.md
+- [ ] All tests passing (unit + integration + fuzz 10+ min)
+- [ ] Security audit completed
+- [ ] Verifiable build (`anchor build --verifiable`)
+- [ ] CU optimization verified
+- [ ] Devnet testing successful (multiple days)
+- [ ] AI slop removed from branch
+- [ ] User explicit confirmation received
 
-## CI/CD Mandate
+## Quick Reference
 
-Required automation:
-- Pre-commit hooks (format, lint, test)
-- GitHub Actions (security checks, verifiable builds)
-- Use `/setup-ci-cd` command to configure
+```bash
+# New feature
+git checkout -b feat/program-feature-15-01-2026
+# ... work ...
+cargo fmt && cargo clippy -- -W clippy::all
+anchor test
+git diff main...HEAD  # Review for slop
+/quick-commit
+
+# Deploy flow
+/deploy  # Always devnet first
+```
 
 ---
 
-**For detailed patterns, agents reference `.claude/skills/solana-expert` skill with progressive disclosure.**
+**Skills**: `.claude/skills/` | **Rules**: `.claude/rules/` | **Commands**: `.claude/commands/` | **Agents**: `.claude/agents/`

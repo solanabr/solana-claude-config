@@ -340,6 +340,74 @@ jobs:
         run: cargo test --test integration
 ```
 
+## Trident Fuzz Testing
+
+Property-based fuzzing for security edge cases. **Required for production programs.**
+
+### Setup
+
+```bash
+# Initialize fuzz tests
+trident init
+
+cd trident-tests
+
+# Run fuzz tests (10+ minutes for security)
+trident fuzz run --timeout 600
+
+# Check for crashes
+ls hfuzz_workspace/*/crashes/
+```
+
+### When to Use
+
+- Security-critical programs
+- Complex state machines
+- Before mainnet deployment
+- After significant changes
+
+### Minimum Requirements
+
+| Phase | Duration |
+|-------|----------|
+| Development | 1-5 minutes |
+| Pre-deploy | 10+ minutes |
+| Security audit | 30+ minutes |
+
+## Code Quality: AI Slop Removal
+
+Before completing any branch, review changes for AI-generated patterns that don't match the codebase style.
+
+### Detection
+
+```bash
+git diff main...HEAD
+```
+
+### Patterns to Remove
+
+| Pattern | Example | Action |
+|---------|---------|--------|
+| **Obvious comments** | `// Add amount to balance` | Remove |
+| **Defensive over-checking** | Try/catch around trusted code | Remove if abnormal |
+| **Verbose errors** | Multi-line where single suffices | Simplify |
+| **Redundant validation** | Re-checking already validated data | Remove |
+| **Inconsistent style** | Different naming/formatting | Align with file |
+
+### Patterns to Keep
+
+- Legitimate security checks
+- Comments explaining non-obvious logic
+- Error handling matching existing patterns
+- Performance-impacting code
+
+### Process
+
+1. `git diff main...HEAD`
+2. Review each changed file
+3. Remove slop, preserve legitimate changes
+4. Report 1-3 sentence summary
+
 ## Best Practices
 
 - Keep unit tests as the default CI gate (fast feedback)
@@ -347,3 +415,5 @@ jobs:
 - Minimize fixtures; prefer programmatic account creation
 - Profile CU usage during development to catch regressions
 - Run integration tests in separate CI stage to control runtime
+- Run Trident fuzz tests before any mainnet deployment
+- Clean AI slop from branches before merging
