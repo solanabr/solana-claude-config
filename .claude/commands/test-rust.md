@@ -2,15 +2,26 @@
 description: "Run Rust tests for Solana programs and backend services"
 ---
 
-You are running Rust tests. This command handles unit tests, integration tests, and Solana-specific testing frameworks.
+You are running Rust tests. This command covers Solana program testing (Mollusk, LiteSVM, Surfpool, Trident) and backend service testing.
+
+## Related Skills
+
+- [testing.md](../skills/testing.md) - Testing strategy details
+- [security.md](../skills/security.md) - Security testing checklist
+- [programs-anchor.md](../skills/programs-anchor.md) - Anchor test patterns
+- [programs-pinocchio.md](../skills/programs-pinocchio.md) - Pinocchio test patterns
 
 ## Step 1: Identify Project Type
 
 ```bash
-# Check what kind of Rust project this is
+echo "🔍 Detecting project type..."
+
 if [ -f "Anchor.toml" ]; then
     echo "📦 Anchor project detected"
     PROJECT_TYPE="anchor"
+elif grep -q "pinocchio" Cargo.toml 2>/dev/null; then
+    echo "🎯 Pinocchio program detected"
+    PROJECT_TYPE="pinocchio"
 elif grep -q "solana-program" Cargo.toml 2>/dev/null; then
     echo "⚙️  Solana native program detected"
     PROJECT_TYPE="solana"
@@ -23,162 +34,204 @@ else
 fi
 ```
 
-## Step 2: Run Unit Tests
+---
 
-### For All Projects
+## Solana Program Testing
+
+### Testing Pyramid
+
+1. **Unit tests (fastest)**: Mollusk - individual instruction tests
+2. **Integration tests (fast)**: LiteSVM - multi-instruction flows
+3. **Realistic state tests**: Surfpool - mainnet/devnet state locally
+4. **Fuzz tests**: Trident - edge case discovery
+
+### Mollusk Unit Tests
+
+Fast, isolated tests for individual instructions:
 
 ```bash
-# Run unit tests with output
-cargo test --lib
-
-# Run specific test
-cargo test test_name
-
-# Run tests with logging
-RUST_LOG=debug cargo test -- --nocapture
-
-# Run tests in release mode (faster for compute-heavy tests)
-cargo test --release
+echo "🐚 Running Mollusk unit tests..."
+cargo test --lib -- --nocapture
 ```
 
-### For Solana Programs (Mollusk)
+```rust
+#[cfg(test)]
+mod tests {
+    use mollusk_svm::Mollusk;
+    use solana_sdk::{account::Account, pubkey::Pubkey, instruction::Instruction};
 
-```bash
-# Run Mollusk unit tests (fast, isolated)
-cargo test --lib --features test-sbf
+    #[test]
+    fn test_initialize() {
+        let program_id = Pubkey::new_unique();
+        let mollusk = Mollusk::new(&program_id, "target/deploy/my_program.so");
 
-# Example test output shows:
-# - CU consumption per test
-# - Account state changes
-# - Program logs
+        // Setup accounts
+        let user = Pubkey::new_unique();
+        let accounts = vec![
+            (user, Account::new(1_000_000_000, 0, &program_id)),
+        ];
+
+        // Create instruction
+        let instruction = Instruction {
+            program_id,
+            accounts: vec![],
+            data: vec![0], // Initialize discriminator
+        };
+
+        // Process and verify
+        let result = mollusk.process_instruction(&instruction, &accounts);
+        assert!(result.program_result.is_ok());
+
+        // Check CU usage
+        println!("CU consumed: {}", result.compute_units_consumed);
+        assert!(result.compute_units_consumed < 50_000);
+    }
+}
 ```
 
-## Step 3: Run Integration Tests
+### LiteSVM Integration Tests
 
-### For Anchor Programs
+Multi-instruction flow testing:
 
 ```bash
-# Run Anchor tests (uses Bankrun or local validator)
-anchor test
-
-# Run without building (if already built)
-anchor test --skip-build
-
-# Run specific test file
-anchor test tests/integration.ts
-
-# Run with detailed logs
-RUST_LOG=debug anchor test
+echo "⚡ Running LiteSVM integration tests..."
+cargo test --test '*'
 ```
 
-### For LiteSVM Tests
+```rust
+#[cfg(test)]
+mod tests {
+    use litesvm::LiteSVM;
+    use solana_sdk::{signature::Keypair, signer::Signer, transaction::Transaction};
 
-```bash
-# Run LiteSVM integration tests
-cargo test --test '*' --features litesvm
+    #[test]
+    fn test_full_deposit_withdraw_flow() {
+        let mut svm = LiteSVM::new();
 
-# LiteSVM provides:
-# - Fast integration testing
-# - Multi-program interactions
-# - Account state verification
+        // Add program
+        let program_id = Pubkey::new_unique();
+        svm.add_program(program_id, include_bytes!("../target/deploy/my_program.so"));
+
+        // Create and fund user
+        let user = Keypair::new();
+        svm.airdrop(&user.pubkey(), 10_000_000_000).unwrap();
+
+        // Build transaction
+        let tx = Transaction::new_signed_with_payer(
+            &[/* deposit instruction */],
+            Some(&user.pubkey()),
+            &[&user],
+            svm.latest_blockhash(),
+        );
+
+        // Execute and verify
+        let result = svm.send_transaction(tx);
+        assert!(result.is_ok());
+    }
+}
 ```
 
-## Step 4: Run Fuzz Tests (if configured)
+### Surfpool Integration Tests
+
+Test against realistic mainnet/devnet state locally:
 
 ```bash
-# Check if Trident is set up
-if [ -d "trident-tests" ]; then
-    echo "🔍 Running fuzz tests with Trident..."
-    cd trident-tests
+echo "🏄 Running Surfpool integration tests..."
 
-    # Run fuzz tests (Trident v0.7+)
-    trident fuzz run
+# Start local Surfnet (drop-in replacement for test-validator)
+surfpool start --background
 
-    # Run for specific time (e.g., 5 minutes)
-    trident fuzz run --timeout 300
+# Run tests against realistic state
+cargo test --test integration
 
-    cd ..
+# Stop Surfnet
+surfpool stop
+```
+
+```typescript
+// Surfpool enables:
+// - Complex CPIs with mainnet programs (Jupiter 40+ accounts)
+// - Time travel and block manipulation
+// - Account cloning between environments
+
+// Time travel to specific slot
+await connection._rpcRequest('surfnet_timeTravel', [{
+    absoluteSlot: 250000000
+}]);
+
+// Clone account from mainnet
+await connection._rpcRequest('surfnet_cloneProgramAccount', [{
+    source: mainnetProgramId.toString(),
+    destination: localProgramId.toString(),
+    account: accountPubkey.toString(),
+}]);
+```
+
+### Trident Fuzz Tests
+
+Property-based fuzzing for edge cases:
+
+```bash
+echo "🔱 Running Trident fuzz tests..."
+
+# Initialize (first time only)
+if [ ! -d "trident-tests" ]; then
+    trident init
+fi
+
+cd trident-tests
+
+# Run fuzz tests (modern syntax)
+trident fuzz run --timeout 300
+
+# Check for crashes
+if [ -d "hfuzz_workspace" ]; then
+    echo "📋 Checking for crash reports..."
+    find hfuzz_workspace -name "crashes" -type d -exec ls -la {} \; 2>/dev/null
+fi
+
+cd ..
+```
+
+### Complete Solana Test Suite
+
+```bash
+echo "🧪 Running complete Solana test suite..."
+
+# 1. Build program
+if [ -f "Anchor.toml" ]; then
+    anchor build
 else
-    echo "ℹ️  No fuzz tests configured (use trident init to set up)"
-fi
-```
-
-## Step 5: Run Doc Tests
-
-```bash
-# Test code examples in documentation comments
-cargo test --doc
-
-# These are the examples in /// comments:
-# /// ```rust
-# /// assert_eq!(add(2, 2), 4);
-# /// ```
-```
-
-## Step 6: Check Test Coverage
-
-```bash
-# Install tarpaulin if not present
-if ! command -v cargo-tarpaulin &> /dev/null; then
-    echo "Installing cargo-tarpaulin..."
-    cargo install cargo-tarpaulin
+    cargo build-sbf
 fi
 
-# Generate coverage report
-cargo tarpaulin --out Html --output-dir coverage
-
-echo "📊 Coverage report: coverage/index.html"
-```
-
-## Project-Specific Test Patterns
-
-### Anchor Program Tests
-
-```bash
-# Comprehensive Anchor test run
-echo "🔨 Building program..."
-anchor build
-
-echo "🧪 Running unit tests..."
+# 2. Unit tests (Mollusk)
+echo "📍 Unit tests..."
 cargo test --lib
 
-echo "🔗 Running integration tests..."
-anchor test --skip-deploy
-
-echo "✅ All Anchor tests complete"
-```
-
-### Native Solana Program Tests
-
-```bash
-# Build for SBF
-cargo build-sbf
-
-# Run Mollusk unit tests
-echo "🧪 Unit tests (Mollusk)..."
-cargo test --lib
-
-# Run LiteSVM integration tests
-echo "🔗 Integration tests (LiteSVM)..."
+# 3. Integration tests (LiteSVM)
+echo "📍 Integration tests..."
 cargo test --test '*'
 
-# Run on local validator (if needed)
-if [ "$FULL_INTEGRATION" = "true" ]; then
-    echo "🌐 Starting local validator..."
-    solana-test-validator &
-    VALIDATOR_PID=$!
-
-    sleep 5
-    cargo test-sbf
-
-    kill $VALIDATOR_PID
+# 4. Fuzz tests (Trident) - quick run
+if [ -d "trident-tests" ]; then
+    echo "📍 Fuzz tests..."
+    cd trident-tests && trident fuzz run --timeout 60 && cd ..
 fi
+
+echo "✅ All Solana tests complete!"
 ```
 
-### Backend Service Tests
+---
+
+## Backend Service Testing
+
+### Axum/Tokio Service Tests
 
 ```bash
-# Run all backend tests
+echo "🌐 Running backend service tests..."
+
+# Run all tests
 cargo test
 
 # Run with test database
@@ -186,186 +239,165 @@ if [ -f ".env.test" ]; then
     export $(cat .env.test | xargs)
 fi
 
-# Run integration tests against test database
+# Integration tests (serial to avoid DB conflicts)
 cargo test --test '*' -- --test-threads=1
-
-# Run async tests
-cargo test --features tokio-test
 ```
 
-## Common Test Flags
+### Database Testing Pattern
+
+```rust
+#[cfg(test)]
+mod tests {
+    use sqlx::PgPool;
+
+    #[sqlx::test]
+    async fn test_user_creation(pool: PgPool) {
+        let user = sqlx::query_as!(
+            User,
+            "INSERT INTO users (name) VALUES ($1) RETURNING *",
+            "test_user"
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+        assert_eq!(user.name, "test_user");
+    }
+}
+```
+
+### Async Handler Tests
+
+```rust
+#[cfg(test)]
+mod tests {
+    use axum::{body::Body, http::{Request, StatusCode}};
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_get_account() {
+        let app = create_test_app().await;
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/accounts/11111111111111111111111111111111")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap()
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+}
+```
+
+---
+
+## Common Test Commands
 
 ```bash
 # Show println! output
 cargo test -- --nocapture
 
-# Run tests in parallel (default)
-cargo test
+# Run specific test
+cargo test test_name -- --exact
 
-# Run tests serially (for integration tests with shared state)
+# Run tests serially (shared state)
 cargo test -- --test-threads=1
 
-# Run only fast tests (custom feature)
-cargo test --features fast-tests
+# Run with logging
+RUST_LOG=debug cargo test
+
+# Run with backtrace
+RUST_BACKTRACE=1 cargo test
 
 # Run ignored tests
 cargo test -- --ignored
 
-# Run all tests including ignored
-cargo test -- --include-ignored
+# Run benchmarks
+cargo bench
+```
 
-# Show test execution time
-cargo test -- --show-output
+## Test Coverage
+
+```bash
+# Install tarpaulin
+cargo install cargo-tarpaulin
+
+# Generate coverage report
+cargo tarpaulin --out Html --output-dir coverage
+
+echo "📊 Coverage report: coverage/index.html"
 ```
 
 ## Debugging Failed Tests
 
 ```bash
-# Run specific failing test with logs
-RUST_LOG=trace cargo test failing_test_name -- --nocapture --exact
+# Full debug output
+RUST_LOG=trace RUST_BACKTRACE=full cargo test failing_test -- --nocapture --exact
 
-# For Solana programs, check transaction logs
-# Failed tests will show:
-# - Program logs
-# - Error codes
-# - Account states
-# - CU consumption
+# For Solana programs, check:
+# - Program logs in test output
+# - Account validation logic
+# - PDA derivations
+# - Arithmetic errors
 
-# Run with backtrace
-RUST_BACKTRACE=1 cargo test failing_test
-
-# Full backtrace
-RUST_BACKTRACE=full cargo test failing_test
+# For backend services, check:
+# - Database state
+# - Mock expectations
+# - Async/await usage
+# - Environment variables
 ```
 
-## Performance Testing
+## Test Framework Comparison
+
+| Framework | Speed | Use Case | Scope |
+|-----------|-------|----------|-------|
+| **Mollusk** | ⚡ Fastest | Single instruction | Unit |
+| **LiteSVM** | ⚡ Fast | Multi-instruction flows | Integration |
+| **Surfpool** | 🚀 Fast | Realistic cluster state | Integration |
+| **Trident** | 🐢 Slower | Edge case discovery | Fuzz |
+| **test-validator** | 🐢 Slowest | Full network simulation | E2E |
+
+## CI Test Pattern
 
 ```bash
-# Run benchmarks (if configured)
-cargo bench
-
-# Profile test execution
-cargo test --release -- --nocapture
-
-# For Solana programs, check CU usage in test output
-```
-
-## CI/CD Test Pattern
-
-```bash
-# Comprehensive test suite for CI
 set -e  # Exit on first failure
 
-echo "📝 Checking format..."
+echo "📝 Format check..."
 cargo fmt -- --check
 
-echo "🔎 Running clippy..."
+echo "🔎 Clippy..."
 cargo clippy --all-targets -- -D warnings
 
-echo "🧪 Running unit tests..."
+echo "🧪 Unit tests..."
 cargo test --lib
 
-echo "🔗 Running integration tests..."
-if [ -f "Anchor.toml" ]; then
-    anchor test --skip-deploy
-else
-    cargo test --test '*'
-fi
+echo "🔗 Integration tests..."
+cargo test --test '*'
 
-echo "📚 Testing documentation..."
+echo "📚 Doc tests..."
 cargo test --doc
 
 echo "✅ All tests passed!"
 ```
 
-## Test Organization Best Practices
-
-### Unit Tests (in src/ files)
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_calculation() {
-        assert_eq!(calculate(2, 2), 4);
-    }
-
-    #[test]
-    fn test_error_case() {
-        let result = risky_operation();
-        assert!(result.is_err());
-    }
-}
-```
-
-### Integration Tests (tests/ directory)
-```
-tests/
-├── common/
-│   └── mod.rs          # Shared test utilities
-├── integration.rs      # Integration tests
-└── e2e.rs             # End-to-end tests
-```
-
-### Mollusk Tests (Solana programs)
-```rust
-#[cfg(test)]
-mod tests {
-    use mollusk_svm::Mollusk;
-
-    #[test]
-    fn test_initialize() {
-        let program_id = Pubkey::new_unique();
-        let mollusk = Mollusk::new(&program_id, "target/deploy/program.so");
-
-        let instruction = /* ... */;
-        let result = mollusk.process_instruction(&instruction, &accounts);
-
-        assert!(result.program_result.is_ok());
-
-        // Check CU usage
-        println!("CU used: {}", result.compute_units_consumed);
-    }
-}
-```
-
-## When Tests Fail
-
-1. **Read the error message carefully**
-   - Error code/message
-   - Failed assertion
-   - Stack trace
-
-2. **For Solana programs:**
-   - Check program logs in test output
-   - Verify account validation logic
-   - Confirm PDA derivations
-   - Check for arithmetic errors
-
-3. **For backend services:**
-   - Check database state
-   - Verify mock expectations
-   - Confirm async/await usage
-   - Check environment variables
-
-4. **Common fixes:**
-   - Update test data
-   - Fix race conditions (use `--test-threads=1`)
-   - Clear test database
-   - Rebuild program (`anchor build`)
-
 ## Test Checklist
 
-Before committing:
-- [ ] All unit tests pass
-- [ ] All integration tests pass
-- [ ] No warnings from clippy
-- [ ] Code is formatted
-- [ ] New features have tests
-- [ ] Edge cases covered
-- [ ] Error cases tested
+Before deployment:
+
+- [ ] All Mollusk unit tests pass
+- [ ] All LiteSVM integration tests pass
+- [ ] Surfpool tests pass (if using mainnet state)
+- [ ] Fuzz testing run 10+ minutes with no crashes
+- [ ] Error conditions tested
+- [ ] Edge cases covered (max values, zero values)
+- [ ] CU consumption within limits
+- [ ] Backend integration tests pass
 
 ---
 
-**Remember**: Tests are your safety net. Write them, run them, trust them.
+**Remember**: Test at all levels. Mollusk for speed, LiteSVM for integration, Surfpool for realistic state, Trident for edge cases.
