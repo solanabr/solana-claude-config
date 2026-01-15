@@ -93,6 +93,8 @@ Claude will spawn each specialized agent by itself based on context.
     │   ├── backend-async.md          # Axum/Tokio patterns
     │   ├── testing.md                # Test framework selection
     │   ├── security.md               # Security checklist
+    │   └── idl-codegen.md            # IDL generation and client codegen 
+    │   └── payments.md               # Solana Pay, Commerce Kit, Kora payments
     │   ├── deployment.md             # Deployment workflows
     │   ├── ecosystem.md              # DeFi/NFT integrations
     │   └── resources.md              # Official links
@@ -178,6 +180,8 @@ This project builds on excellent work from the community:
 MIT - See [LICENSE](LICENSE)
 
 ## TODO
+
+This is a work in progress, use at your own risk.
 
 - Integrate any MCP tools used in project
 - Wait for [bug] to be solved and review rules/skills token usage
