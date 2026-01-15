@@ -1,56 +1,5 @@
 # Pinocchio Framework Skill
 
-## When to Use Pinocchio
-
-### Use Pinocchio When:
-- **CU limits are being hit** - 80-95% reduction vs Anchor
-- **Binary size must be minimized** - Leaner code paths, smaller deployments
-- **Maximum throughput required** - High-frequency programs (DEX, orderbooks)
-- **Zero external dependencies** - Only Solana SDK types
-- **no_std environments** - Embedded or constrained contexts
-- **Team has Solana expertise** - Understands unsafe Rust
-
-### Don't Use Pinocchio When:
-- **Team is learning Solana** - Anchor's guardrails prevent mistakes
-- **Development speed is priority** - Anchor reduces boilerplate significantly
-- **Program complexity is high** - More manual code = more audit surface
-- **Maintenance burden is concern** - Less abstraction = more code to maintain
-- **IDL auto-generation needed** - Requires separate Shank setup
-
-## Decision Framework
-
-```
-┌─────────────────────────────────────────────────────┐
-│                   Start Here                        │
-└─────────────────────┬───────────────────────────────┘
-                      │
-         ┌────────────▼────────────┐
-         │  Are you hitting CU    │
-         │  limits with Anchor?   │
-         └────────────┬───────────┘
-                      │
-         ┌────No──────┴──────Yes────┐
-         │                          │
-         ▼                          ▼
-   Use Anchor              Is the hotspot
-   (default)               isolated?
-                                │
-                   ┌────No──────┴──────Yes────┐
-                   │                          │
-                   ▼                          ▼
-            Consider full              Optimize hotspot
-            Pinocchio rewrite          with Pinocchio
-```
-
-## Performance Comparison
-
-| Metric | Anchor | Pinocchio | Savings |
-|--------|--------|-----------|---------|
-| CU (typical instruction) | ~50,000 | ~8,000 | 84% |
-| Binary size | ~200KB | ~40KB | 80% |
-| Heap usage | Higher | Minimal | Varies |
-| PDA derivation | ~1,500 CU | ~0 CU (stored bump) | 100% |
-
 ## Architecture Principles
 
 ### Zero-Copy Philosophy

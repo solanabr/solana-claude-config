@@ -1,30 +1,5 @@
 # Anchor Framework Skill
 
-## When to Use Anchor (Default Choice)
-
-Use Anchor when:
-- **Fast iteration** with reduced boilerplate is priority
-- **IDL generation** needed for TypeScript/client generation
-- **Team projects** requiring standardized patterns
-- **Mature tooling** needed (testing, workspace management)
-- **Built-in security** through automatic account validation
-
-Consider alternatives (Pinocchio/native) when:
-- CU limits are being hit (Anchor adds ~10-20% overhead)
-- Binary size must be minimized
-- Maximum throughput required
-- Custom serialization needed
-
-## Core Advantages
-
-| Feature | Benefit |
-|---------|---------|
-| Reduced Boilerplate | Abstracts account management, instruction serialization |
-| Built-in Security | Automatic ownership verification, data validation |
-| IDL Generation | Automatic interface definition for clients |
-| Testing Infrastructure | `anchor test`, Mollusk/LiteSVM integration |
-| Workspace Management | Multi-program monorepos with shared dependencies |
-
 ## Project Structure
 
 ```

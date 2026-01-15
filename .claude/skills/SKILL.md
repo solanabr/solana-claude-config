@@ -40,14 +40,8 @@ Reference when needed:
 - **deployment.md** - Devnet/mainnet workflows, verifiable builds, safety checks
 - **ecosystem.md** - DeFi protocols, NFT standards, data indexing
 
-### Pattern Libraries
-- **anchor-patterns.md** - Common Anchor patterns (account validation, PDAs, CPIs, error handling)
-- **rust-async-patterns.md** - Async backend patterns (Axum 0.8, error handling, DB, WebSocket)
-- **web3-patterns.md** - Frontend integration patterns (Web3.js 2.0, wallet adapters, React Query)
-
 ## Operating Principles
 1. **Foundation files are the golden standard**
-2. **Enhanced sections marked with "### Enhanced:"**
 3. **Load specific files only when needed**
 4. **Agents discover patterns autonomously**
 
@@ -68,5 +62,3 @@ The Foundation version includes 4 critical custom enhancements:
 2. **Account Reloading After CPIs** - Critical for correctness (prevent stale data)
 3. **Event Emission** - Observability best practice
 4. **Security Checklist** - Actionable per-instruction verification
-
-All enhancements clearly marked with "### Enhanced:" prefix.
