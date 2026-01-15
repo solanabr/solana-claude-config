@@ -4,6 +4,12 @@ description: "Setup CI/CD pipeline with automated security checks for Solana pro
 
 You are setting up a CI/CD pipeline for Solana program development. Modern Solana development requires automated security checks on every commit.
 
+## Related Skills
+
+- [deployment.md](../skills/deployment.md) - CI/CD patterns and workflows
+- [testing.md](../skills/testing.md) - Test automation
+- [security.md](../skills/security.md) - Security automation
+
 ## Overview
 
 This command creates a GitHub Actions workflow that automatically:
@@ -30,9 +36,9 @@ on:
     branches: [ main ]
 
 env:
-  SOLANA_VERSION: '1.18.0'
-  ANCHOR_VERSION: '0.32.0'
-  RUST_VERSION: '1.79.0'
+  SOLANA_VERSION: '2.1.0'
+  ANCHOR_VERSION: '0.31.1'
+  RUST_VERSION: '1.82.0'
 
 jobs:
   security-audit:
@@ -149,7 +155,7 @@ jobs:
       - name: Run Fuzz Tests
         run: |
           cd trident-tests
-          trident fuzz run-hfuzz
+          trident fuzz run --timeout 300
         timeout-minutes: 10
         continue-on-error: true
 

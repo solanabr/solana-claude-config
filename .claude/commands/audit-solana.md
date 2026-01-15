@@ -4,6 +4,13 @@ description: "Security audit for Solana programs (Anchor/native)"
 
 You are conducting a security audit for Solana programs. This is CRITICAL - take your time.
 
+## Related Skills
+
+- [security.md](../skills/security.md) - Comprehensive security checklist
+- [programs-anchor.md](../skills/programs-anchor.md) - Anchor security patterns
+- [programs-pinocchio.md](../skills/programs-pinocchio.md) - Pinocchio security patterns
+- [testing.md](../skills/testing.md) - Fuzz testing with Trident
+
 ## Pre-Audit Checklist
 
 - [ ] All tests passing

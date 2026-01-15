@@ -2,27 +2,117 @@
 description: "Quick commit with automatic formatting, linting, and conventional commit message"
 ---
 
-You are creating a quick commit. This command formats code, runs lints, generates a conventional commit message, and commits changes.
+You are creating a quick commit. This command formats code, runs lints, generates a conventional commit message, and commits changes. If starting a new task, it creates a feature branch first.
 
 ## Overview
 
 This command automates the commit workflow:
-1. Stage changes (or confirm staged changes)
-2. Format and lint code
-3. Run quick tests
-4. Generate conventional commit message
-5. Create commit with co-author tag
+1. **Check if new task** → create feature branch
+2. Stage changes (or confirm staged changes)
+3. Format and lint code
+4. Run quick tests
+5. Generate conventional commit message
+6. Create commit
 
-## Step 1: Check Working Directory Status
+## Step 0: Check for New Task / Feature Branch
 
 ```bash
-echo "📊 Checking git status..."
+echo "🌿 Checking branch status..."
 
 # Check if we're in a git repository
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "❌ Not a git repository"
     exit 1
 fi
+
+# Get current branch
+CURRENT_BRANCH=$(git branch --show-current)
+echo "Current branch: $CURRENT_BRANCH"
+
+# Check if we're on main/master (starting a new task)
+if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
+    echo ""
+    echo "📌 You're on $CURRENT_BRANCH. Starting a new task?"
+    echo ""
+    
+    # Get today's date in DD-MM-YYYY format
+    TODAY=$(date +%d-%m-%Y)
+    
+    # Analyze changes to determine branch type and name
+    analyze_for_branch() {
+        local diff_output=$(git diff --name-status)
+        local staged_output=$(git diff --cached --name-status)
+        local all_changes="$diff_output$staged_output"
+        
+        # Determine type
+        if echo "$all_changes" | grep -q "test"; then
+            BRANCH_TYPE="test"
+        elif echo "$all_changes" | grep -q "\.md$"; then
+            BRANCH_TYPE="docs"
+        elif echo "$all_changes" | grep -qE "\.(ts|tsx|js|jsx)$" && echo "$all_changes" | grep -qv "^programs/"; then
+            BRANCH_TYPE="feat"
+        elif echo "$all_changes" | grep -q "^programs/\|\.rs$"; then
+            BRANCH_TYPE="feat"
+        else
+            BRANCH_TYPE="feat"
+        fi
+        
+        # Get descriptive name from first significant file
+        local first_file=$(echo "$all_changes" | head -1 | awk '{print $2}')
+        local file_basename=$(basename "$first_file" 2>/dev/null | sed 's/\.[^.]*$//' | tr '_' '-' | tr '[:upper:]' '[:lower:]')
+        
+        # Determine scope for name
+        if echo "$all_changes" | grep -q "^programs/"; then
+            BRANCH_SCOPE="program"
+        elif echo "$all_changes" | grep -qE "^(app|src|components)/"; then
+            BRANCH_SCOPE="frontend"
+        elif echo "$all_changes" | grep -q "^tests/"; then
+            BRANCH_SCOPE="tests"
+        else
+            BRANCH_SCOPE=""
+        fi
+        
+        # Generate branch name
+        if [ -n "$BRANCH_SCOPE" ]; then
+            SUGGESTED_BRANCH="$BRANCH_TYPE/$BRANCH_SCOPE-$file_basename-$TODAY"
+        else
+            SUGGESTED_BRANCH="$BRANCH_TYPE/$file_basename-$TODAY"
+        fi
+    }
+    
+    analyze_for_branch
+    
+    echo "💡 Suggested branch: $SUGGESTED_BRANCH"
+    echo ""
+    echo "Options:"
+    echo "  1. Create branch: $SUGGESTED_BRANCH"
+    echo "  2. Enter custom branch name"
+    echo "  3. Stay on $CURRENT_BRANCH (not recommended)"
+    echo ""
+    
+    # ASK USER which option they prefer
+    # Default: create the suggested branch
+    
+    # Create branch
+    echo "Creating branch: $SUGGESTED_BRANCH"
+    git checkout -b "$SUGGESTED_BRANCH"
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Created and switched to: $SUGGESTED_BRANCH"
+        CURRENT_BRANCH="$SUGGESTED_BRANCH"
+    else
+        echo "❌ Failed to create branch"
+        exit 1
+    fi
+fi
+
+echo ""
+```
+
+## Step 1: Check Working Directory Status
+
+```bash
+echo "📊 Checking git status..."
 
 # Check for changes
 if git diff --quiet && git diff --cached --quiet; then
@@ -260,6 +350,35 @@ else
     exit 1
 fi
 ```
+
+## Branch Naming Convention
+
+When starting a new task from main/master, branches are created with this format:
+
+```
+<type>/<scope>-<description>-<DD-MM-YYYY>
+```
+
+### Examples
+
+| Branch Name | Description |
+|-------------|-------------|
+| `feat/program-vault-15-01-2026` | New vault feature in program |
+| `feat/frontend-dashboard-15-01-2026` | New dashboard in frontend |
+| `fix/program-overflow-15-01-2026` | Bug fix in program |
+| `docs/readme-15-01-2026` | Documentation update |
+| `test/integration-15-01-2026` | New tests |
+
+### Branch Types
+
+- `feat/` - New features
+- `fix/` - Bug fixes
+- `docs/` - Documentation
+- `test/` - Test additions
+- `refactor/` - Code restructuring
+- `chore/` - Maintenance tasks
+
+---
 
 ## Conventional Commit Types
 

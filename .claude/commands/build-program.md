@@ -4,6 +4,11 @@ description: "Build Solana program (Anchor or native)"
 
 You are building a Solana program. Follow these steps:
 
+## Related Skills
+
+- [programs-anchor.md](../skills/programs-anchor.md) - Anchor build patterns
+- [programs-pinocchio.md](../skills/programs-pinocchio.md) - Pinocchio build optimization
+
 ## Step 1: Identify Program Type
 
 Check which framework is being used:
