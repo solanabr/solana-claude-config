@@ -5,19 +5,9 @@ when_filename_contains:
   - "pinocchio"
 ---
 
-# Pinocchio Zero-Copy Framework Rules
+# Pinocchio Zero-Copy Framework Rules (Comprehensive Reference)
 
-These rules apply when using Pinocchio for maximum CU optimization.
-
-## Overview
-
-Pinocchio achieves **80-95% CU reduction** vs Anchor through:
-- Zero-copy account access
-- No external dependencies
-- Minimal binary size
-- Manual validation patterns
-
-**Trade-off**: Less ergonomic than Anchor, but maximum performance.
+Pinocchio achieves **80-95% CU reduction** vs Anchor through zero-copy access, no dependencies, minimal binary size.
 
 ## Entrypoint Patterns
 
@@ -38,11 +28,10 @@ pub fn process_instruction(
     accounts: &[AccountInfo],
     data: &[u8],
 ) -> ProgramResult {
-    // Dispatch based on instruction discriminator
-    match data.first().ok_or(ProgramError::InvalidInstructionData)? {
-        0 => initialize(program_id, accounts, &data[1..]),
-        1 => transfer(program_id, accounts, &data[1..]),
-        _ => Err(ProgramError::InvalidInstructionData),
+    match data.split_first() {
+        Some((0, data)) => Deposit::try_from((data, accounts))?.process(),
+        Some((1, _)) => Withdraw::try_from(accounts)?.process(),
+        _ => Err(ProgramError::InvalidInstructionData)
     }
 }
 ```
@@ -52,20 +41,124 @@ pub fn process_instruction(
 use pinocchio::lazy_program_entrypoint;
 
 lazy_program_entrypoint!(process_instruction);
+```
 
-// Same signature as above
+## Single-Byte Discriminators
+
+```rust
+// Use u8 discriminators (NOT 8-byte like Anchor)
+const DISCRIMINATOR_VAULT: u8 = 0;
+const DISCRIMINATOR_USER: u8 = 1;
+const DISCRIMINATOR_POOL: u8 = 2;
+
+// Account layout: [discriminator: 1 byte][data: remaining bytes]
+
+#[repr(C)]
+pub struct Vault {
+    // No discriminator field in struct!
+    pub authority: Pubkey,
+    pub bump: u8,
+    pub balance: u64,
+}
+```
+
+Single-byte supports 255 instructions; use two bytes for up to 65,535 variants.
+
+## Account Struct Patterns
+
+### Use #[repr(C)] for Consistent Layout
+```rust
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct Vault {
+    pub authority: Pubkey,    // 32 bytes
+    pub bump: u8,             // 1 byte
+    pub balance: u64,         // 8 bytes
+    pub last_update: i64,     // 8 bytes
+    // Total: 49 bytes + 1 byte discriminator = 50 bytes
+}
+
+impl Vault {
+    pub const SIZE: usize = core::mem::size_of::<Self>();
+
+    pub const fn account_size() -> usize {
+        1 + Self::SIZE  // discriminator + struct
+    }
+
+    pub fn init(authority: Pubkey, bump: u8) -> Self {
+        Self {
+            authority,
+            bump,
+            balance: 0,
+            last_update: 0,
+        }
+    }
+}
+```
+
+### Struct Field Ordering (Minimize Padding)
+
+Order fields from largest to smallest alignment:
+
+```rust
+// Good: 16 bytes total
+#[repr(C)]
+struct GoodOrder {
+    big: u64,     // 8 bytes, 8-byte aligned
+    medium: u16,  // 2 bytes, 2-byte aligned
+    small: u8,    // 1 byte, 1-byte aligned
+    // 5 bytes padding
+}
+
+// Bad: 24 bytes due to padding
+#[repr(C)]
+struct BadOrder {
+    small: u8,    // 1 byte
+    // 7 bytes padding
+    big: u64,     // 8 bytes
+    medium: u16,  // 2 bytes
+    // 6 bytes padding
+}
+```
+
+### Byte Arrays for Multi-Byte Fields (Safest)
+
+```rust
+#[repr(C)]
+pub struct Config {
+    pub authority: Pubkey,
+    pub mint: Pubkey,
+    seed: [u8; 8],   // Store as bytes, not u64
+    fee: [u8; 2],    // Store as bytes, not u16
+    pub state: u8,
+    pub bump: u8,
+}
+
+impl Config {
+    pub const LEN: usize = core::mem::size_of::<Self>();
+
+    pub fn seed(&self) -> u64 {
+        u64::from_le_bytes(self.seed)
+    }
+
+    pub fn fee(&self) -> u16 {
+        u16::from_le_bytes(self.fee)
+    }
+
+    pub fn set_seed(&mut self, seed: u64) {
+        self.seed = seed.to_le_bytes();
+    }
+
+    pub fn set_fee(&mut self, fee: u16) {
+        self.fee = fee.to_le_bytes();
+    }
+}
 ```
 
 ## Zero-Copy Account Access
 
 ### Reading Account Data (Zero-Copy)
 ```rust
-use pinocchio::account_info::AccountInfo;
-
-// BAD - Anchor way (copies data)
-// let vault: Account<Vault> = Account::try_from(&account)?;
-
-// GOOD - Pinocchio zero-copy (with validation)
 fn read_vault_checked(account: &AccountInfo) -> Result<&Vault, ProgramError> {
     let data = account.borrow_data();
 
@@ -75,7 +168,7 @@ fn read_vault_checked(account: &AccountInfo) -> Result<&Vault, ProgramError> {
     }
 
     // Check discriminator
-    if data[0] != VAULT_DISCRIMINATOR {
+    if data[0] != DISCRIMINATOR_VAULT {
         return Err(ProgramError::InvalidAccountData);
     }
 
@@ -97,8 +190,8 @@ fn write_vault(account: &AccountInfo) -> Result<&mut Vault, ProgramError> {
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // Set discriminator (single byte for efficiency)
-    data[0] = VAULT_DISCRIMINATOR;
+    // Set discriminator (single byte)
+    data[0] = DISCRIMINATOR_VAULT;
 
     // Zero-copy mutable reference
     // SAFETY: We've verified length above
@@ -108,30 +201,39 @@ fn write_vault(account: &AccountInfo) -> Result<&mut Vault, ProgramError> {
 }
 ```
 
-## Single-Byte Discriminators
-
-### Use u8 discriminators (not 8-byte like Anchor)
+### Field-by-Field Serialization (Safest)
 ```rust
-// GOOD - Single byte (Pinocchio pattern)
-const DISCRIMINATOR_VAULT: u8 = 0;
-const DISCRIMINATOR_USER: u8 = 1;
-const DISCRIMINATOR_POOL: u8 = 2;
+impl Config {
+    pub fn write_to_buffer(&self, data: &mut [u8]) -> Result<(), ProgramError> {
+        if data.len() != Self::LEN {
+            return Err(ProgramError::InvalidAccountData);
+        }
 
-// Account layout:
-// [discriminator: 1 byte][data: remaining bytes]
+        let mut offset = 0;
 
-#[repr(C)]
-pub struct Vault {
-    // No discriminator field in struct!
-    pub authority: Pubkey,
-    pub bump: u8,
-    pub balance: u64,
+        data[offset..offset + 32].copy_from_slice(self.authority.as_ref());
+        offset += 32;
+
+        data[offset..offset + 32].copy_from_slice(self.mint.as_ref());
+        offset += 32;
+
+        data[offset..offset + 8].copy_from_slice(&self.seed);
+        offset += 8;
+
+        data[offset..offset + 2].copy_from_slice(&self.fee);
+        offset += 2;
+
+        data[offset] = self.state;
+        data[offset + 1] = self.bump;
+
+        Ok(())
+    }
 }
 ```
 
 ## Manual Account Validation (TryFrom Pattern)
 
-### Implement TryFrom for Anchor-style ergonomics
+### Validated Account Wrapper
 ```rust
 use std::convert::TryFrom;
 
@@ -173,29 +275,101 @@ impl<'a> TryFrom<&'a AccountInfo> for ValidatedVault<'a> {
         })
     }
 }
+```
 
-// Usage (Anchor-like ergonomics!)
-fn initialize(program_id: &Pubkey, accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
-    let vault = ValidatedVault::try_from(&accounts[0])?;
-    let authority = &accounts[1];
+### Account Struct Validation
+```rust
+pub struct DepositAccounts<'a> {
+    pub owner: &'a AccountInfo,
+    pub vault: &'a AccountInfo,
+    pub system_program: &'a AccountInfo,
+}
 
-    // Validate authority is signer
-    if !authority.is_signer() {
-        return Err(ProgramError::MissingRequiredSignature);
+impl<'a> TryFrom<&'a [AccountInfo]> for DepositAccounts<'a> {
+    type Error = ProgramError;
+
+    fn try_from(accounts: &'a [AccountInfo]) -> Result<Self, Self::Error> {
+        let [owner, vault, system_program, _remaining @ ..] = accounts else {
+            return Err(ProgramError::NotEnoughAccountKeys);
+        };
+
+        // Signer check
+        if !owner.is_signer() {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        // Owner check
+        if !vault.is_owned_by(&pinocchio_system::ID) {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+
+        // Program ID check (prevents arbitrary CPI)
+        if system_program.key() != &pinocchio_system::ID {
+            return Err(ProgramError::IncorrectProgramId);
+        }
+
+        Ok(Self { owner, vault, system_program })
     }
+}
+```
 
-    // Process...
-    Ok(())
+### Instruction Data Validation
+```rust
+pub struct DepositData {
+    pub amount: u64,
+}
+
+impl<'a> TryFrom<&'a [u8]> for DepositData {
+    type Error = ProgramError;
+
+    fn try_from(data: &'a [u8]) -> Result<Self, Self::Error> {
+        if data.len() != core::mem::size_of::<u64>() {
+            return Err(ProgramError::InvalidInstructionData);
+        }
+
+        let amount = u64::from_le_bytes(data.try_into().unwrap());
+
+        if amount == 0 {
+            return Err(ProgramError::InvalidInstructionData);
+        }
+
+        Ok(Self { amount })
+    }
+}
+```
+
+### Complete Instruction Pattern
+```rust
+pub struct Deposit<'a> {
+    pub accounts: DepositAccounts<'a>,
+    pub data: DepositData,
+}
+
+impl<'a> TryFrom<(&'a [u8], &'a [AccountInfo])> for Deposit<'a> {
+    type Error = ProgramError;
+
+    fn try_from((data, accounts): (&'a [u8], &'a [AccountInfo])) -> Result<Self, Self::Error> {
+        let accounts = DepositAccounts::try_from(accounts)?;
+        let data = DepositData::try_from(data)?;
+        Ok(Self { accounts, data })
+    }
+}
+
+impl<'a> Deposit<'a> {
+    pub const DISCRIMINATOR: &'a u8 = &0;
+
+    pub fn process(&self) -> ProgramResult {
+        // Business logic only - validation already complete
+        Ok(())
+    }
 }
 ```
 
 ## PDA Validation (Manual)
 
-### Store and use canonical bumps
 ```rust
 use pinocchio::pubkey::Pubkey;
 
-// GOOD - Manual PDA validation with stored bump using create_program_address
 fn validate_pda(
     account: &AccountInfo,
     seeds: &[&[u8]],
@@ -232,81 +406,38 @@ fn example_usage(
 }
 ```
 
-## Account Struct Patterns
+## Cross-Program Invocations (CPIs)
 
-### Use #[repr(C)] for consistent layout
+### Basic CPI
 ```rust
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct Vault {
-    pub authority: Pubkey,    // 32 bytes
-    pub bump: u8,             // 1 byte
-    pub balance: u64,         // 8 bytes
-    pub last_update: i64,     // 8 bytes
-    // Total: 49 bytes + 1 byte discriminator = 50 bytes
-}
+use pinocchio_system::instructions::Transfer;
 
-impl Vault {
-    pub const SIZE: usize = std::mem::size_of::<Self>();
-}
+Transfer {
+    from: self.accounts.owner,
+    to: self.accounts.vault,
+    lamports: self.data.amount,
+}.invoke()?;
 ```
 
-### Implement helper methods
+### PDA-Signed CPI
 ```rust
-impl Vault {
-    /// Calculate required account size
-    pub const fn account_size() -> usize {
-        1 + Self::SIZE  // discriminator + struct
-    }
+use pinocchio::{seeds::Seed, signer::Signer};
 
-    /// Initialize a new vault
-    pub fn init(authority: Pubkey, bump: u8) -> Self {
-        Self {
-            authority,
-            bump,
-            balance: 0,
-            last_update: 0,
-        }
-    }
-}
+let seeds = [
+    Seed::from(b"vault"),
+    Seed::from(self.accounts.owner.key().as_ref()),
+    Seed::from(&[bump]),
+];
+let signers = [Signer::from(&seeds)];
+
+Transfer {
+    from: self.accounts.vault,
+    to: self.accounts.owner,
+    lamports: self.accounts.vault.lamports(),
+}.invoke_signed(&signers)?;
 ```
 
-## Instruction Data Parsing
-
-### Manual deserialization (no Borsh)
-```rust
-// Instruction format: [discriminator: 1 byte][data: remaining]
-
-// GOOD - Manual parsing for performance
-fn parse_deposit_instruction(data: &[u8]) -> Result<u64, ProgramError> {
-    if data.len() != 8 {
-        return Err(ProgramError::InvalidInstructionData);
-    }
-
-    // Parse u64 amount (little-endian)
-    Ok(u64::from_le_bytes([
-        data[0], data[1], data[2], data[3],
-        data[4], data[5], data[6], data[7],
-    ]))
-}
-
-// Or use array slicing
-fn parse_deposit_fast(data: &[u8]) -> Result<u64, ProgramError> {
-    if data.len() != 8 {
-        return Err(ProgramError::InvalidInstructionData);
-    }
-
-    let amount_bytes: [u8; 8] = data[0..8]
-        .try_into()
-        .map_err(|_| ProgramError::InvalidInstructionData)?;
-
-    Ok(u64::from_le_bytes(amount_bytes))
-}
-```
-
-## CPI with Pinocchio
-
-### Manual CPI construction
+### Manual CPI Construction
 ```rust
 use pinocchio::{
     instruction::{AccountMeta, Instruction},
@@ -321,7 +452,7 @@ fn transfer_tokens(
     amount: u64,
     signer_seeds: &[&[&[u8]]],
 ) -> ProgramResult {
-    // SPL Token transfer instruction data: [3 (discriminator), amount (8 bytes)]
+    // SPL Token transfer: [3 (discriminator), amount (8 bytes)]
     let mut instruction_data = [0u8; 9];
     instruction_data[0] = 3; // Transfer discriminator
     instruction_data[1..9].copy_from_slice(&amount.to_le_bytes());
@@ -336,23 +467,111 @@ fn transfer_tokens(
         data: instruction_data.to_vec(),
     };
 
-    let account_infos = &[
-        from.clone(),
-        to.clone(),
-        authority.clone(),
-    ];
-
+    let account_infos = &[from.clone(), to.clone(), authority.clone()];
     invoke_signed(&transfer_ix, account_infos, signer_seeds)
+}
+```
+
+## Token Account Validation
+
+### SPL Token
+```rust
+pub struct Mint;
+
+impl Mint {
+    pub fn check(account: &AccountInfo) -> Result<(), ProgramError> {
+        if !account.is_owned_by(&pinocchio_token::ID) {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        if account.data_len() != pinocchio_token::state::Mint::LEN {
+            return Err(ProgramError::InvalidAccountData);
+        }
+        Ok(())
+    }
+
+    pub fn init(
+        account: &AccountInfo,
+        payer: &AccountInfo,
+        decimals: u8,
+        mint_authority: &[u8; 32],
+        freeze_authority: Option<&[u8; 32]>,
+    ) -> ProgramResult {
+        let lamports = Rent::get()?.minimum_balance(pinocchio_token::state::Mint::LEN);
+
+        CreateAccount {
+            from: payer,
+            to: account,
+            lamports,
+            space: pinocchio_token::state::Mint::LEN as u64,
+            owner: &pinocchio_token::ID,
+        }.invoke()?;
+
+        InitializeMint2 {
+            mint: account,
+            decimals,
+            mint_authority,
+            freeze_authority,
+        }.invoke()
+    }
+}
+```
+
+### Token2022 Support
+```rust
+pub const TOKEN_2022_PROGRAM_ID: [u8; 32] = [...];
+const TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET: usize = 165;
+pub const TOKEN_2022_MINT_DISCRIMINATOR: u8 = 0x01;
+pub const TOKEN_2022_TOKEN_ACCOUNT_DISCRIMINATOR: u8 = 0x02;
+
+pub struct Mint2022;
+
+impl Mint2022 {
+    pub fn check(account: &AccountInfo) -> Result<(), ProgramError> {
+        if !account.is_owned_by(&TOKEN_2022_PROGRAM_ID) {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+
+        let data = account.try_borrow_data()?;
+
+        if data.len() != pinocchio_token::state::Mint::LEN {
+            if data.len() <= TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET {
+                return Err(ProgramError::InvalidAccountData);
+            }
+            if data[TOKEN_2022_ACCOUNT_DISCRIMINATOR_OFFSET] != TOKEN_2022_MINT_DISCRIMINATOR {
+                return Err(ProgramError::InvalidAccountData);
+            }
+        }
+        Ok(())
+    }
+}
+```
+
+### Token Interface (Both Programs)
+```rust
+pub struct MintInterface;
+
+impl MintInterface {
+    pub fn check(account: &AccountInfo) -> Result<(), ProgramError> {
+        if account.is_owned_by(&pinocchio_token::ID) {
+            if account.data_len() != pinocchio_token::state::Mint::LEN {
+                return Err(ProgramError::InvalidAccountData);
+            }
+        } else if account.is_owned_by(&TOKEN_2022_PROGRAM_ID) {
+            Mint2022::check(account)?;
+        } else {
+            return Err(ProgramError::InvalidAccountOwner);
+        }
+        Ok(())
+    }
 }
 ```
 
 ## Error Handling
 
-### Use ProgramError directly
+### Using ProgramError Custom Codes
 ```rust
 use pinocchio::program_error::ProgramError;
 
-// Custom errors via custom code
 const ERROR_INSUFFICIENT_FUNDS: u32 = 0;
 const ERROR_UNAUTHORIZED: u32 = 1;
 const ERROR_INVALID_AMOUNT: u32 = 2;
@@ -368,36 +587,31 @@ fn validate_transfer(balance: u64, amount: u64) -> ProgramResult {
 }
 ```
 
-## Performance Optimization
-
-### Minimize allocations
+### Using thiserror (no_std Compatible)
 ```rust
-// BAD - allocates Vec
-let seeds = vec![b"vault".as_slice(), authority.as_ref()];
+use thiserror::Error;
+use num_derive::FromPrimitive;
+use pinocchio::program_error::ProgramError;
 
-// GOOD - stack-allocated array
-let seeds: &[&[u8]] = &[b"vault", authority.as_ref()];
-```
+#[derive(Clone, Debug, Eq, Error, FromPrimitive, PartialEq)]
+pub enum VaultError {
+    #[error("Lamport balance below rent-exempt threshold")]
+    NotRentExempt,
+    #[error("Invalid account owner")]
+    InvalidOwner,
+    #[error("Account not initialized")]
+    NotInitialized,
+}
 
-### Use const for fixed sizes
-```rust
-const VAULT_SIZE: usize = 1 + 32 + 1 + 8 + 8; // discriminator + Vault fields
-
-// Use in rent calculation
-let rent_lamports = rent.minimum_balance(VAULT_SIZE);
-```
-
-### Feature-gate debug code
-```rust
-#[cfg(feature = "debug")]
-{
-    pinocchio::msg!("Processing deposit: {}", amount);
+impl From<VaultError> for ProgramError {
+    fn from(e: VaultError) -> Self {
+        ProgramError::Custom(e as u32)
+    }
 }
 ```
 
 ## Account Creation
 
-### Manual account creation with System Program
 ```rust
 use pinocchio::{
     program::invoke_signed,
@@ -435,9 +649,135 @@ fn create_account(
 }
 ```
 
-## Testing with Pinocchio
+## Closing Accounts Securely
 
-### Unit tests with Mollusk
+```rust
+pub fn close(account: &AccountInfo, destination: &AccountInfo) -> ProgramResult {
+    // Mark as closed (prevents reinitialization/revival attacks)
+    {
+        let mut data = account.try_borrow_mut_data()?;
+        data[0] = 0xff;
+    }
+
+    // Transfer lamports
+    *destination.try_borrow_mut_lamports()? += *account.try_borrow_lamports()?;
+
+    // Shrink and close
+    account.realloc(1, true)?;
+    account.close()
+}
+```
+
+## Performance Optimization
+
+### Minimize Allocations
+```rust
+// BAD - allocates Vec
+let seeds = vec![b"vault".as_slice(), authority.as_ref()];
+
+// GOOD - stack-allocated array
+let seeds: &[&[u8]] = &[b"vault", authority.as_ref()];
+```
+
+### Use const for Fixed Sizes
+```rust
+const VAULT_SIZE: usize = 1 + 32 + 1 + 8 + 8; // discriminator + fields
+let rent_lamports = rent.minimum_balance(VAULT_SIZE);
+```
+
+### Feature-Gate Debug Code
+```rust
+#[cfg(not(feature = "perf"))]
+pinocchio::msg!("Processing deposit: {}", amount);
+```
+
+### Bitwise Flags for Storage
+```rust
+const FLAG_ACTIVE: u8 = 1 << 0;
+const FLAG_FROZEN: u8 = 1 << 1;
+const FLAG_ADMIN: u8 = 1 << 2;
+
+// Set flag
+flags |= FLAG_ACTIVE;
+
+// Check flag
+if flags & FLAG_ACTIVE != 0 { /* active */ }
+
+// Clear flag
+flags &= !FLAG_ACTIVE;
+```
+
+### Zero-Allocation Architecture
+```rust
+// Good: references with borrowed lifetimes
+pub struct Instruction<'a> {
+    pub accounts: &'a [AccountInfo],
+    pub data: &'a [u8],
+}
+
+// Enforce no heap usage
+no_allocator!();
+```
+
+## Batch Instructions
+
+Process multiple operations in single CPI (saves ~1000 CU per batched operation):
+
+```rust
+const IX_HEADER_SIZE: usize = 2; // account_count + data_length
+
+pub fn process_batch(mut accounts: &[AccountInfo], mut data: &[u8]) -> ProgramResult {
+    loop {
+        if data.len() < IX_HEADER_SIZE {
+            return Err(ProgramError::InvalidInstructionData);
+        }
+
+        let account_count = data[0] as usize;
+        let data_len = data[1] as usize;
+        let data_offset = IX_HEADER_SIZE + data_len;
+
+        if accounts.len() < account_count || data.len() < data_offset {
+            return Err(ProgramError::InvalidInstructionData);
+        }
+
+        let (ix_accounts, ix_data) = (&accounts[..account_count], &data[IX_HEADER_SIZE..data_offset]);
+
+        process_inner_instruction(ix_accounts, ix_data)?;
+
+        if data_offset == data.len() {
+            break;
+        }
+
+        accounts = &accounts[account_count..];
+        data = &data[data_offset..];
+    }
+
+    Ok(())
+}
+```
+
+## Dangerous Patterns to Avoid
+
+```rust
+// ❌ transmute with unaligned data
+let value: u64 = unsafe { core::mem::transmute(bytes_slice) };
+
+// ❌ Pointer casting to packed structs
+#[repr(C, packed)]
+pub struct Packed { pub a: u8, pub b: u64 }
+let config = unsafe { &*(data.as_ptr() as *const Packed) };
+
+// ❌ Direct field access on packed structs creates unaligned references
+let b_ref = &packed.b;
+
+// ❌ Assuming alignment without verification
+let config = unsafe { &*(data.as_ptr() as *const Config) };
+
+// ✅ Use byte arrays and accessor methods instead (see Config example above)
+```
+
+## Testing with Mollusk
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -454,17 +794,15 @@ mod tests {
         let program_id = Pubkey::new_unique();
         let mollusk = Mollusk::new(&program_id, "target/deploy/program");
 
-        // Setup accounts
         let authority = Pubkey::new_unique();
         let (vault_pda, bump) = Pubkey::find_program_address(
             &[b"vault", authority.as_ref()],
             &program_id,
         );
 
-        // Create instruction data: [0 (init discriminator), bump]
+        // Instruction data: [0 (init discriminator), bump]
         let ix_data = vec![0, bump];
 
-        // Create account data
         let vault_account = Account {
             lamports: 1_000_000,
             data: vec![0; Vault::account_size()],
@@ -487,7 +825,6 @@ mod tests {
             (authority, Account::default()),
         ];
 
-        // Execute
         let result = mollusk.process_instruction(&instruction, &accounts);
 
         assert!(result.program_result.is_ok());
@@ -498,52 +835,15 @@ mod tests {
 }
 ```
 
-## When to Use Pinocchio
+## Security Checklist
 
-### Use Pinocchio when:
-- Maximum CU efficiency required
-- Binary size constraints
-- High-frequency program (e.g., DEX)
-- You understand unsafe Rust
-- Team has Solana expertise
-
-### Don't use Pinocchio when:
-- Team is learning Solana
-- Development speed more important
-- Program complexity is high
-- Maintenance burden is a concern
-
-## Integration with Codama
-
-### Generate IDL and clients separately
-```bash
-# Pinocchio doesn't auto-generate IDL
-# Use Shank for IDL generation
-cargo install shank-cli
-
-# Generate IDL
-shank idl --out-dir idl programs/your-program/src/lib.rs
-
-# Use Codama for client generation
-npx @codama/cli generate
-```
-
-## Best Practices
-
-1. **Start with Anchor, optimize with Pinocchio if needed**
-2. **Always benchmark CU savings** - measure before/after
-3. **Document all unsafe code** - explain safety invariants
-4. **Comprehensive testing** - more critical without Anchor safety nets
-5. **Use TryFrom pattern** - maintains ergonomics with safety
-6. **Store canonical bumps** - don't recalculate PDAs
-7. **Single-byte discriminators** - saves space and CU
-8. **Feature-gate logs** - minimize production overhead
-
----
-
-**Remember**: Pinocchio is for optimization, not first implementation. Master Anchor first, then optimize hotspots with Pinocchio.
-
-**Sources:**
-- [Pinocchio GitHub](https://github.com/anza-xyz/pinocchio)
-- [Pinocchio Guide](https://www.helius.dev/blog/pinocchio)
-- [Pinocchio Optimization Patterns](https://www.quicknode.com/guides/solana-development/pinocchio/how-to-build-and-deploy-a-solana-program-using-pinocchio)
+- [ ] Validate all account owners in `TryFrom` implementations
+- [ ] Check signer status for authority accounts
+- [ ] Verify PDA derivation matches expected seeds
+- [ ] Validate program IDs before CPIs (prevent arbitrary CPI)
+- [ ] Use checked math (`checked_add`, `checked_sub`, etc.)
+- [ ] Mark closed accounts to prevent revival attacks
+- [ ] Validate instruction data length before parsing
+- [ ] Check for duplicate mutable accounts
+- [ ] Document all unsafe code with safety invariants
+- [ ] Store canonical bumps (don't recalculate PDAs)

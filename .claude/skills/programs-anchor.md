@@ -309,9 +309,10 @@ solana program set-upgrade-authority <PROGRAM_ID> --final
 
 1. **Account per entity** - One PDA per user/vault/pool
 2. **Minimize account size** - Rent costs scale with size
-3. **Store canonical bumps** - ~1500 CU savings per access
-4. **Use discriminators** - Anchor handles this automatically
-5. **Plan for upgrades** - Leave room for new fields
+3. **Use discriminators** - Anchor handles this automatically
+4. **Plan for upgrades** - Leave room for new fields
+
+See `.claude/rules/anchor.md` for PDA bump storage patterns and CU optimization.
 
 ### PDA Design
 
@@ -346,25 +347,7 @@ anchor verify <PROGRAM_ID>
 soteria analyze
 ```
 
-### Manual Review Focus
-1. Account validation completeness
-2. Arithmetic overflow/underflow
-3. CPI target validation
-4. Access control logic
-5. Reentrancy vectors
-6. Oracle manipulation
-7. Slippage protection
-
-## Common Issues and Solutions
-
-| Issue | Solution |
-|-------|----------|
-| IDL mismatch | Rebuild with `anchor build`, clear `target/` |
-| Account not found | Check PDA derivation, verify seeds |
-| Constraint violated | Review constraint logic, check account state |
-| CPI failed | Validate target program, check signer seeds |
-| Insufficient CU | Optimize with stored bumps, reduce logging |
-| Stale data after CPI | Call `.reload()?` on modified accounts |
+For per-instruction security checklist and common anti-patterns, see `.claude/rules/anchor.md`.
 
 ## Migration from Legacy
 
