@@ -6,6 +6,8 @@ Current multi-agent workflow favors monorepos, so we use a single CLAUDE.md/conf
 
 The idea here is to provide a generic CLAUDE.md that relies on subagents to plan and execute actions, dynamically loading markdown files for context, saving tokens in the end of the day.
 
+Remember to rename ./CLAUDE-solana.md back to ./CLAUDE.md, as the current top-level CLAUDE.md file is focused on maintaining the repo itself.
+
 ## What This Is
 
 A complete `.claude/` configuration that turns Claude into a Solana development expert with:
@@ -20,7 +22,7 @@ A complete `.claude/` configuration that turns Claude into a Solana development 
 ```bash
 # Copy to your Solana project
 cp -r .claude /path/to/your-project/
-cp CLAUDE.md /path/to/your-project/
+cp CLAUDE-solana.md /path/to/your-project/CLAUDE.md
 
 # Or clone and use as template
 git clone https://github.com/solanabr/solana-claude-config
