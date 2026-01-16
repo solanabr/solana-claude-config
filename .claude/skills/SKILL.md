@@ -117,6 +117,10 @@ When implementing changes, provide:
 - [payments.md](payments.md) - Commerce Kit, Kora (gasless), payment UX
 - [resources.md](resources.md) - Official documentation links
 
+### Unity & Game Development
+- [unity.md](unity.md) - Solana.Unity-SDK, wallet integration, NFT loading, transaction building in C#
+- [playsolana.md](playsolana.md) - PlaySolana ecosystem, PSG1 console, PlayDex, PlayID, SvalGuard
+
 ## Task routing guide
 
 | User asks about... | Primary file(s) |
@@ -132,3 +136,5 @@ When implementing changes, provide:
 | DeFi integration, NFTs | ecosystem.md |
 | Payment flows, checkout | payments.md |
 | Generated clients, IDL | idl-codegen.md |
+| Unity game development | unity.md |
+| PlaySolana, PSG1 console | playsolana.md |

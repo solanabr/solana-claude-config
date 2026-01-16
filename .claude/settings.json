@@ -50,7 +50,10 @@
       "Bash(pwd)",
       "Bash(cd *)",
       "Bash(cp *)",
-      "Bash(mv *)"
+      "Bash(mv *)",
+
+      "Bash(unity-editor *)",
+      "Bash(dotnet *)"
     ],
     "deny": [
       "Bash(rm -rf / *)",
@@ -82,6 +85,19 @@
           {
             "type": "command",
             "command": "echo \"\"\necho \"📊 Test Summary:\";\nif [ \"$CLAUDE_TOOL_EXIT_CODE\" -eq 0 ]; then\n  echo \"✅ All tests passed!\"\nelse\n  echo \"❌ Some tests failed. Review output above.\"\nfi"
+          }
+        ]
+      },
+
+      {
+        "matcher": "Bash",
+        "when": {
+          "command_matches": "dotnet test|unity-editor.*-runTests"
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"\"\necho \"📊 .NET Test Summary:\";\nif [ \"$CLAUDE_TOOL_EXIT_CODE\" -eq 0 ]; then\n  echo \"✅ All tests passed!\"\nelse\n  echo \"❌ Some tests failed. Review output above.\"\nfi"
           }
         ]
       }

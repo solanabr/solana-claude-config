@@ -12,8 +12,8 @@ Remember to rename ./CLAUDE-solana.md back to ./CLAUDE.md, as the current top-le
 
 A complete `.claude/` configuration that turns Claude into a Solana development expert with:
 
-- **Specialized agents** for different tasks (architecture, Anchor, Pinocchio, frontend, backend, QA, docs)
-- **Workflow commands** for building, testing, deploying, and committing
+- **Specialized agents** for different tasks (architecture, Anchor, Pinocchio, frontend, backend, QA, docs, Unity games)
+- **Workflow commands** for building, testing, deploying, and committing (Rust, TypeScript, Unity/C#)
 - **Progressive skill loading** that only loads context when needed (saves tokens)
 - **Auto-loading rules** that enforce best practices based on file patterns
 
@@ -57,6 +57,8 @@ Claude will spawn each specialized agent by itself based on context.
 | Testing | Mollusk, LiteSVM, Surfpool, Trident |
 | Frontend | @solana/kit, Next.js 15, React 19 |
 | Backend | Axum 0.8+, Tokio 1.40+, sqlx |
+| Unity Games | Solana.Unity-SDK, .NET 9, C# 13 |
+| PlaySolana | PSG1 console, PlayDex, SvalGuard |
 
 ## Repository Structure
 
@@ -66,21 +68,25 @@ Claude will spawn each specialized agent by itself based on context.
 ├── README.md                    # This file
 ├── LICENSE                      # MIT
 └── .claude/
-    ├── agents/                      # 7 specialized agents
+    ├── agents/                      # 9 specialized agents
     │   ├── solana-architect.md          # System design, PDAs, architecture
     │   ├── anchor-engineer.md           # Anchor framework development
     │   ├── pinocchio-engineer.md        # CU optimization, zero-copy
     │   ├── solana-frontend-engineer.md  # React/Next.js, wallet UX
     │   ├── rust-backend-engineer.md     # Axum APIs, indexers
     │   ├── solana-qa-engineer.md        # Testing, CU profiling, code quality
-    │   └── tech-docs-writer.md          # Documentation
+    │   ├── tech-docs-writer.md          # Documentation
+    │   ├── game-architect.md            # Solana game design, Unity architecture
+    │   └── unity-engineer.md            # Unity/C# implementation, Solana.Unity-SDK
     │
-    ├── commands/                # 9 workflow commands
+    ├── commands/                # 11 workflow commands
     │   ├── quick-commit.md          # Branch creation, format, lint, commit
     │   ├── build-program.md         # Build Solana programs
     │   ├── build-app.md             # Build web clients
+    │   ├── build-unity.md           # Build Unity projects (WebGL, Desktop, PSG1)
     │   ├── test-rust.md             # Rust tests (Mollusk/LiteSVM/Trident)
     │   ├── test-typescript.md       # TypeScript tests
+    │   ├── test-dotnet.md           # .NET/C# tests (Unity, NUnit)
     │   ├── test-and-fix.md          # Automated test→fix loop
     │   ├── deploy.md                # Deploy (devnet first, then mainnet)
     │   ├── audit-solana.md          # Security audit workflow
@@ -95,17 +101,20 @@ Claude will spawn each specialized agent by itself based on context.
     │   ├── backend-async.md          # Axum/Tokio patterns
     │   ├── testing.md                # Test framework selection
     │   ├── security.md               # Security checklist
-    │   └── idl-codegen.md            # IDL generation and client codegen 
-    │   └── payments.md               # Solana Pay, Commerce Kit, Kora payments
+    │   ├── idl-codegen.md            # IDL generation and client codegen
+    │   ├── payments.md               # Solana Pay, Commerce Kit, Kora payments
     │   ├── deployment.md             # Deployment workflows
     │   ├── ecosystem.md              # DeFi/NFT integrations
-    │   └── resources.md              # Official links
+    │   ├── resources.md              # Official links
+    │   ├── unity.md                  # Solana.Unity-SDK, C# patterns
+    │   └── playsolana.md             # PlaySolana ecosystem, PSG1, PlayDex
     │
     ├── rules/                   # Auto-loading constraints
     │   ├── anchor.md                # Anchor code rules
     │   ├── pinocchio.md             # Pinocchio code rules
     │   ├── rust.md                  # General Rust rules
-    │   └── kit-react.md             # Frontend rules
+    │   ├── kit-react.md             # Frontend rules
+    │   └── dotnet.md                # C#/.NET/Unity rules
     │
     └── settings.json            # Permissions, hooks
 ```
@@ -121,6 +130,8 @@ Claude will spawn each specialized agent by itself based on context.
 | **rust-backend-engineer** | Axum APIs, indexers, WebSocket services | Opus |
 | **solana-qa-engineer** | Testing (Mollusk/LiteSVM/Trident), CU profiling, code quality | Opus |
 | **tech-docs-writer** | READMEs, API docs, integration guides | Sonnet |
+| **game-architect** | Solana game design, Unity architecture, on-chain game state, PlaySolana | Opus |
+| **unity-engineer** | Unity/C# implementation, Solana.Unity-SDK, wallet integration, NFT display | Sonnet |
 
 ## Commands
 
@@ -129,8 +140,10 @@ Claude will spawn each specialized agent by itself based on context.
 | `/quick-commit` | Create branch, format, lint, conventional commit |
 | `/build-program` | Build Anchor or native Solana program |
 | `/build-app` | Build Next.js/Vite web client |
+| `/build-unity` | Build Unity project (WebGL, Desktop, PSG1) |
 | `/test-rust` | Run Mollusk, LiteSVM, Surfpool, Trident tests |
 | `/test-ts` | Run TypeScript tests (Anchor, Vitest, Playwright) |
+| `/test-dotnet` | Run .NET/C# tests (Unity Test Framework, NUnit) |
 | `/deploy` | Deploy to devnet (always first) or mainnet |
 | `/audit-solana` | Comprehensive security audit |
 | `/setup-ci-cd` | Configure GitHub Actions pipeline |

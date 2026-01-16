@@ -30,9 +30,11 @@ Use `/quick-commit` command to automate branch creation and commits.
 | Layer | Stack |
 |-------|-------|
 | **Programs** | Anchor 0.31+, Pinocchio 0.10+, Rust 1.82+ |
-| **Testing** | Mollusk, LiteSVM, Surfpool, Trident |
+| **Testing** | Mollusk, LiteSVM, Surfpool, Trident, Unity Test Framework |
 | **Frontend** | @solana/kit, Next.js 15, React 19, Tailwind 4.0 |
 | **Backend** | Axum 0.8+, Tokio 1.40+, sqlx |
+| **Unity Games** | Solana.Unity-SDK, Unity 6000+, .NET 9, C# 13 |
+| **PlaySolana** | PSG1 console, PlayDex, PlayID, SvalGuard |
 
 ## Agents
 
@@ -47,6 +49,8 @@ Summon specialized agents for complex tasks:
 | **rust-backend-engineer** | Axum APIs, indexers, WebSocket services, async patterns |
 | **solana-qa-engineer** | Testing (Mollusk/LiteSVM/Trident), CU profiling, code quality |
 | **tech-docs-writer** | READMEs, API docs, integration guides |
+| **game-architect** | Solana game design, Unity architecture, on-chain game state, PlaySolana ecosystem |
+| **unity-engineer** | Unity/C# implementation, Solana.Unity-SDK, wallet connection, NFT display |
 
 ## Mandatory Workflow
 
@@ -109,6 +113,7 @@ Entry point: `.claude/skills/SKILL.md`
 | **Security** | security.md |
 | **Deployment** | deployment.md |
 | **Ecosystem** | ecosystem.md, resources.md |
+| **Unity/Games** | unity.md, playsolana.md |
 
 Rules (always-on constraints): `.claude/rules/`
 
@@ -119,8 +124,10 @@ Rules (always-on constraints): `.claude/rules/`
 | `/quick-commit` | Format, lint, branch creation, conventional commits |
 | `/build-program` | Build Solana program (Anchor/native) |
 | `/build-app` | Build web client (Next.js/Vite) |
+| `/build-unity` | Build Unity project (WebGL/Desktop/PSG1) |
 | `/test-rust` | Run Rust tests (Mollusk/LiteSVM/Trident) |
 | `/test-ts` | Run TypeScript tests (Anchor/Vitest/Playwright) |
+| `/test-dotnet` | Run .NET/C# tests (Unity Test Framework) |
 | `/deploy` | Deploy to devnet or mainnet |
 | `/audit-solana` | Security audit workflow |
 | `/setup-ci-cd` | Configure GitHub Actions |
