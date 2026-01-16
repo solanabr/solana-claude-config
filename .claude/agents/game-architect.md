@@ -424,46 +424,200 @@ public async Task ReportQuestCompletion(string questId, uint score)
 | **PSG1** | 8GB RAM, optimize for OLED |
 | **Mobile** | Battery, thermal, memory |
 
-## Game Design Document Structure
+## Document Generation
 
-When planning a new game, create:
+When planning a new game, you MUST create two documents in the project root or designated docs folder:
+
+### 1. `concept.md` - Game Concept Document
+
+Create a comprehensive game concept document covering:
 
 ```markdown
-## 1. Game Overview
-- Core gameplay loop
-- Target platforms
-- Session length
+# [Game Title] - Game Concept
 
-## 2. On-Chain Architecture
-- What goes on-chain
-- Program accounts structure
-- Token economics
+## Overview
+[High-level description of the game]
 
-## 3. Unity Architecture
-- Project structure
-- Key systems
-- Scene flow
+### Genre
+- [Primary genre]
+- [Secondary elements]
 
-## 4. NFT Integration
-- Asset types
-- Metadata structure
-- Dynamic attributes
+### Platform
+- [Target platforms with specifics]
 
-## 5. Player Progression
-- XP/leveling system
-- Achievements
-- Leaderboards
+### Engine & Tech Stack
+- [Engine, frameworks, package manager]
+- [Key dependencies and versions]
 
-## 6. Security Considerations
-- Anti-cheat measures
-- Economic exploits prevention
-- State validation
-
-## 7. Implementation Steps
-- Phase 1: Core gameplay
-- Phase 2: Blockchain integration
-- Phase 3: Polish and testing
+### Commands
+```bash
+[Build/run commands]
 ```
+
+### Project Structure
+```
+[Directory layout]
+```
+
+---
+
+## Story & Theme
+
+### Setting
+[World, context, atmosphere]
+
+### The Conflict
+[Core tension/challenge]
+
+### Tone
+[Emotional direction, visual mood]
+
+---
+
+## Art Style
+
+### Visual Direction
+[Aesthetic choices, rendering approach]
+
+### Color Palette
+| Element | Primary Color | Description |
+|---------|--------------|-------------|
+[Key colors with hex codes]
+
+### Influences
+[Reference games, art styles]
+
+---
+
+## Target Audience
+- **Primary**: [Who is this for]
+- **Session Length**: [Expected play time]
+
+---
+
+## Core Gameplay Loop
+
+```
+[ASCII diagram of loop]
+```
+
+### [Phase 1 Name]
+1. [Step by step]
+
+### [Phase 2 Name]
+1. [Step by step]
+
+---
+
+## Design Philosophy
+
+### [Key Pillar 1]
+[Explanation of design priority]
+
+### [Key Pillar 2]
+[Explanation of design priority]
+
+---
+
+## Detailed Specifications
+
+[Exhaustive specs for each game element:]
+- Entity stats and formulas
+- Visual effect parameters
+- UI layout specifics
+- Physics values
+- Pool sizes and limits
+
+---
+
+## Technical Implementation
+
+### Rendering
+[Performance approach]
+
+### State Management
+[How state is structured]
+```
+
+### 2. `plan.md` - Implementation Plan
+
+Create a step-by-step implementation plan:
+
+```markdown
+# [Game Title] - Implementation Plan
+
+## Overview
+[What will be built and approach summary]
+
+---
+
+## Step 1: [Phase Name]
+
+### What will be implemented:
+- [Feature 1]
+- [Feature 2]
+- [Feature 3]
+
+### Files to create:
+- `path/to/file.ext` - [Purpose]
+- `path/to/file2.ext` - [Purpose]
+
+### What to review:
+- [Checkpoint 1]
+- [Checkpoint 2]
+
+---
+
+## Step 2: [Phase Name]
+
+### What will be implemented:
+- [Feature list]
+
+### Files to create:
+- [File list with purposes]
+
+### What to review:
+- [Review checklist]
+
+---
+
+[Continue for each implementation phase...]
+
+---
+
+## Implementation Notes
+
+- [Key constraint 1]
+- [Key constraint 2]
+- [Milestone approach]
+```
+
+### Document Generation Workflow
+
+1. **Gather Requirements**: Ask clarifying questions about gameplay, platform, blockchain integration
+2. **Create `concept.md`**: Comprehensive game design document with all specifications
+3. **Create `plan.md`**: Phased implementation steps with files and review checkpoints
+4. **Review with User**: Present both documents for approval before implementation
+5. **Delegate to unity-engineer**: Once approved, hand off to implementation agent
+
+### Example Document Structure
+
+For a tower defense game, `concept.md` would include:
+- Tower stats (cost, range, damage, fire rate, projectile speed)
+- Enemy specs (HP, speed, wave scaling formulas)
+- Visual effect parameters (particle counts, colors, durations)
+- UI layout (HUD positions, button sizes, fonts)
+- Map dimensions and waypoint coordinates
+
+And `plan.md` would break implementation into:
+- Step 1: Project setup, environment, camera
+- Step 2: Enemy system with movement
+- Step 3: Tower system with placement
+- Step 4: Combat and projectiles
+- Step 5: Effects and polish
+- Step 6: Wave system and game flow
+- Step 7: UI and minimap
+- Step 8: Post-processing and final polish
 
 ## Best Practices
 

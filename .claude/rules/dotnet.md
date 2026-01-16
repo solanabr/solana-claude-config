@@ -10,6 +10,42 @@ globs:
 
 These rules apply when working with C# files in Unity or standard .NET projects.
 
+## Important Rules
+
+- ALL instructions in this document MUST be followed
+- DO NOT edit more code than required to fulfill the request
+- DO NOT waste tokens - be clear, concise, and surgical
+- DO NOT assume - ask for clarification if ambiguous
+
+## .NET Runtime Configuration
+
+- **Target SDK**: .NET 9 (stable) or as specified in `global.json`
+- If `global.json` exists, use the version it defines
+- For multi-target frameworks, build/test against highest compatible target
+
+## Build → Respond → Iterate Workflow
+
+Operate in tight feedback loops:
+
+1. **Make Change**: Surgical edit, minimal scope
+2. **Build**: `dotnet build --no-restore --nologo --verbosity minimal`
+3. **If Fails**: Retry once if obvious (typo, missing ref), then **STOP and ask**
+4. **Test**: `dotnet test --no-build --nologo --verbosity minimal`
+5. **If Fails**: Run `rg` failure scan, fix if obvious, else **STOP and ask**
+
+### Two-Strike Rule
+
+If same issue fails twice:
+- **STOP** immediately
+- Present error output and code change
+- Ask for guidance
+
+## Restore Rules
+
+Run `dotnet restore` before build/test if:
+- Project was cloned
+- `.csproj`, `.sln`, `Directory.Packages.props`, or `packages.config` changed
+
 ## Code Style
 
 ### Naming Conventions
@@ -361,6 +397,106 @@ var result = GetDataAsync().Result; // Can deadlock
 // ✅ Await properly
 var result = await GetDataAsync();
 ```
+
+## Token Optimization
+
+When reading files, extract only what's needed:
+
+- From `.csproj`: `PackageReference`, `TargetFramework`, `ProjectReference`, `OutputType`
+- **NEVER read**: `.Designer.cs`, `obj/`, `bin/`
+- Only read `AssemblyInfo.cs` if explicitly requested
+- Omit comments, logging, debug lines unless user includes them
+
+## Focused Failure Analysis
+
+Use `rg` (ripgrep) to extract only essential test output:
+
+```bash
+dotnet test --no-build --verbosity normal | rg -e "Failed" -e "Error Message:" -e "Stack trace:" -C 4
+```
+
+## Test Output Tagging
+
+Write tests with unique IDs for precise filtering:
+
+```csharp
+[Test]
+public void Calculate_WithValidInput_ReturnsExpected()
+{
+    var testId = "TEST-CALC-001";
+    Console.WriteLine($"[{testId}] Starting test");
+
+    try
+    {
+        // Test logic
+        Console.WriteLine($"[{testId}] Result: {result}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[{testId}-FAIL] Error: {ex.Message}");
+        throw;
+    }
+}
+```
+
+Filter with: `dotnet test | rg "\[TEST-CALC-001"`
+
+## Modern C# Features (C# 12/13)
+
+Use modern patterns where appropriate:
+
+```csharp
+// Primary constructors
+public class WalletService(IRpcClient rpc, ILogger logger)
+{
+    public async Task<Balance> GetBalance() => await rpc.GetBalanceAsync();
+}
+
+// Collection expressions
+List<int> numbers = [1, 2, 3, 4, 5];
+int[] array = [..existingList, 6, 7];
+
+// Pattern matching
+if (result is { IsSuccess: true, Value: var value })
+{
+    Process(value);
+}
+
+// File-scoped namespaces
+namespace MyGame.Blockchain;
+
+public class TransactionBuilder { }
+```
+
+## Dependency Management
+
+```bash
+# Add package
+dotnet add package <name> --version <x.y.z>
+
+# Remove package
+dotnet remove package <name>
+
+# Add project reference
+dotnet add reference ../OtherProject/OtherProject.csproj
+```
+
+## Code Quality Commands
+
+```bash
+# Format
+dotnet format
+
+# Treat warnings as errors
+dotnet build -warnaserror
+```
+
+## Environment Configuration
+
+Check these files for configuration:
+- `Properties/launchSettings.json` - Environment hints
+- `appsettings.json` - Runtime settings
+- `global.json` - SDK pinning
 
 ## XML Documentation
 

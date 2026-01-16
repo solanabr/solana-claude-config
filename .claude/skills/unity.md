@@ -2,6 +2,174 @@
 
 Progressive skill for Unity game development with Solana blockchain integration using Solana.Unity-SDK.
 
+---
+
+## C# Coding Guidelines
+
+### Basic Principles
+
+- **KISS**: Keep It Simple, Stupid
+- **SOLID**: Especially Single Responsibility, Interface Segregation, and Dependency Inversion
+- Read `.editorconfig` before writing code
+
+### Project Structure
+
+```
+Assets/
+├── _Game/                          # Game-specific code
+│   ├── Scenes/                     # Scene files (.unity)
+│   ├── Scripts/
+│   │   ├── Runtime/                # Runtime code
+│   │   │   ├── _Game.asmdef        # Main assembly definition
+│   │   │   ├── Core/               # Managers, state
+│   │   │   ├── Blockchain/         # Solana integration
+│   │   │   ├── UI/                 # UI components
+│   │   │   └── Gameplay/           # Game mechanics
+│   │   └── Editor/                 # Editor extensions
+│   │       └── _Game.Editor.asmdef
+│   └── Tests/
+│       ├── EditMode/               # Edit Mode tests
+│       │   ├── _Game.Tests.asmdef
+│       │   └── TestDoubles/        # Stubs, Spies, Fakes
+│       └── PlayMode/               # Play Mode tests
+│           ├── _Game.PlayMode.Tests.asmdef
+│           └── TestDoubles/
+├── Packages/                       # UPM packages
+└── Plugins/                        # Native plugins
+```
+
+### Naming Conventions
+
+| Element | Convention | Example |
+|---------|------------|---------|
+| Public fields | PascalCase | `MaxHealth`, `PlayerName` |
+| Private fields | _camelCase | `_walletService`, `_isConnected` |
+| Static fields | s_camelCase | `s_instance`, `s_defaultConfig` |
+| Booleans | Verb prefix | `IsConnected`, `HasPendingTx`, `CanSign` |
+| Properties | PascalCase | `WalletAddress`, `Balance` |
+| Methods | Verb + PascalCase | `GetBalance()`, `ConnectWallet()` |
+| Events | Verb phrase | `OnConnected`, `OpeningDoor`, `DoorOpened` |
+| Interfaces | IPascalCase | `IWalletService`, `IRpcClient` |
+
+### Serialized Properties Pattern
+
+```csharp
+// Use field: target for Unity attributes on auto-properties
+[field: SerializeField]
+public int Health { get; private set; } = 100;
+
+[field: SerializeField]
+[field: Range(0, 100)]
+[field: Tooltip("Maximum health points")]
+public int MaxHealth { get; private set; } = 100;
+```
+
+### Early Return Pattern
+
+```csharp
+// Good - early return
+public async Task<bool> ProcessTransaction(Transaction tx)
+{
+    if (tx == null)
+        return false;
+
+    if (!IsConnected)
+        return false;
+
+    var result = await SendTransaction(tx);
+    return result.IsSuccess;
+}
+
+// Avoid - nested conditions
+public async Task<bool> ProcessTransaction(Transaction tx)
+{
+    if (tx != null)
+    {
+        if (IsConnected)
+        {
+            var result = await SendTransaction(tx);
+            return result.IsSuccess;
+        }
+    }
+    return false;
+}
+```
+
+### Events with System.Action
+
+```csharp
+// Define events
+public event Action OnDisconnected;
+public event Action<Account> OnConnected;
+public event Action<double> OnBalanceChanged;
+
+// Raise safely
+private void RaiseConnected(Account account) => OnConnected?.Invoke(account);
+
+// Handler naming: Subject_Event
+private void WalletService_OnConnected(Account account) => UpdateUI();
+```
+
+### XML Documentation
+
+```csharp
+/// <summary>
+/// Connects to a Solana wallet using the specified adapter.
+/// </summary>
+/// <param name="adapterType">The type of wallet adapter to use.</param>
+/// <returns>True if connection succeeded, false otherwise.</returns>
+public async Task<bool> Connect(WalletAdapterType adapterType) { }
+
+// For interface implementations
+/// <inheritdoc/>
+public async Task<bool> Connect(WalletAdapterType adapterType) { }
+```
+
+### Comments Best Practices
+
+- Write comments in English
+- Explain "why not" - if other implementations seem possible, explain why they weren't chosen
+- Update comments when code changes
+- Delete unnecessary comments proactively
+
+```csharp
+private List<Player> _activePlayers = new List<Player>();
+// Using List instead of Dictionary<int, Player>:
+// Small player count with infrequent lookups prioritizes
+// memory efficiency and iteration speed.
+```
+
+---
+
+## .meta File Rules
+
+**CRITICAL**: Never manually create `.meta` files.
+
+- Unity automatically generates `.meta` files for assets
+- When creating files/folders, let Unity generate the `.meta`
+- Include `.meta` files in version control
+- If you need to create an asset (texture, prefab, etc.), use a temporary Editor script:
+
+```csharp
+// Temporary Editor script to create assets
+// Delete after use
+using UnityEditor;
+using UnityEngine;
+
+public static class AssetCreator
+{
+    [MenuItem("Tools/Create My Asset")]
+    public static void CreateAsset()
+    {
+        var asset = ScriptableObject.CreateInstance<MyScriptableObject>();
+        AssetDatabase.CreateAsset(asset, "Assets/MyAsset.asset");
+        AssetDatabase.SaveAssets();
+    }
+}
+```
+
+---
+
 ## Quick Reference
 
 ### Installation
@@ -824,9 +992,163 @@ public async Task<bool> WaitForConfirmation(
 
 ---
 
+---
+
+## Unity Test Framework Guidelines
+
+### Test Structure
+
+| Test Location | Use For |
+|---------------|---------|
+| `Tests/EditMode/` | Editor extensions, pure C# logic, deserialization |
+| `Tests/PlayMode/` | MonoBehaviours, coroutines, scene-dependent code |
+| `Tests/*/TestDoubles/` | Stubs, Spies, Dummies, Fakes, Mocks |
+| `Tests/Scenes/` | Test-specific scene files |
+
+### Test Naming
+
+```csharp
+// Pattern: MethodName_Condition_ExpectedResult
+[Test]
+public void Deserialize_ValidData_ReturnsCorrectScore() { }
+
+[Test]
+public void Connect_WhenAlreadyConnected_ReturnsTrue() { }
+
+// Test class naming: TargetClassName + "Test"
+[TestFixture]
+public class PlayerAccountTest { }
+```
+
+### Test Design Rules
+
+1. **AAA Pattern**: Arrange, Act, Assert (separate with blank lines, no comments needed)
+2. **Single Assert**: One assertion per test method
+3. **Use Constraint Model**: `Assert.That(actual, Is.EqualTo(expected))`
+4. **No Message Parameter**: Test name and constraint should convey intent
+5. **No Control Flow**: Never use `if`, `switch`, `for`, `foreach`, or ternary in tests
+6. **Parameterized Tests**: Use `[TestCase]`, `[TestCaseSource]`, `[Values]` for variations
+
+```csharp
+[TestFixture]
+public class RewardCalculatorTest
+{
+    [Test]
+    public void Calculate_WithMultiplier_ReturnsScaledAmount()
+    {
+        var sut = new RewardCalculator();
+        var expected = 150UL;
+
+        var actual = sut.Calculate(100UL, 1.5f);
+
+        Assert.That(actual, Is.EqualTo(expected));
+    }
+
+    [TestCase(0UL, 1.0f, 0UL)]
+    [TestCase(100UL, 2.0f, 200UL)]
+    [TestCase(50UL, 0.5f, 25UL)]
+    public void Calculate_VariousInputs_ReturnsExpected(
+        ulong baseReward, float multiplier, ulong expected)
+    {
+        var sut = new RewardCalculator();
+
+        var actual = sut.Calculate(baseReward, multiplier);
+
+        Assert.That(actual, Is.EqualTo(expected));
+    }
+}
+```
+
+### Test Variable Naming
+
+| Role | Name |
+|------|------|
+| System Under Test | `sut` |
+| Actual result | `actual` |
+| Expected value | `expected` |
+| Test doubles | `stub*`, `spy*`, `dummy*`, `fake*`, `mock*` |
+
+### Play Mode Test Pattern
+
+```csharp
+[TestFixture]
+public class WalletUITest
+{
+    private GameObject _testObject;
+    private WalletConnectUI _sut;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _testObject = new GameObject("TestUI");
+        _sut = _testObject.AddComponent<WalletConnectUI>();
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        Object.Destroy(_testObject);
+    }
+
+    [UnityTest]
+    public IEnumerator Initialize_OnStart_SetsDisconnectedState()
+    {
+        yield return null;
+
+        Assert.That(_sut.IsConnected, Is.False);
+    }
+}
+```
+
+### Async Exception Testing
+
+```csharp
+// Unity Test Framework limitation: use try-catch for async exceptions
+[UnityTest]
+public IEnumerator Connect_InvalidCredentials_ThrowsException()
+{
+    var task = TestAsyncException();
+    yield return task.AsCoroutine();
+}
+
+private async Task TestAsyncException()
+{
+    try
+    {
+        await _sut.Connect("invalid");
+        Assert.Fail("Expected exception was not thrown");
+    }
+    catch (WalletException expected)
+    {
+        Assert.That(expected.Message, Does.Contain("invalid"));
+    }
+}
+```
+
+### Test Execution
+
+- Verify no compile errors before running
+- Use filters to minimize test execution scope
+- Run via Unity Test Runner (Edit Mode or Play Mode)
+
+### Test Result Interpretation
+
+| Result | Action |
+|--------|--------|
+| **Passed** | Continue |
+| **Failed** | Investigate and fix |
+| **Inconclusive** | Treat as failure |
+| **Skipped** | Ignore |
+
+**Two-strike rule**: If a test fails twice consecutively, stop and ask for guidance.
+
+---
+
 ## Resources
 
 - [Solana.Unity-SDK GitHub](https://github.com/magicblock-labs/Solana.Unity-SDK)
 - [Solana.Unity-SDK Docs](https://solana.unity-sdk.gg/)
 - [Unity Solana Wallet Template](https://github.com/magicblock-labs/Solana.Unity-SDK/tree/main/Samples~)
+- [Unity Test Framework](https://docs.unity3d.com/Packages/com.unity.test-framework@1.4/manual/index.html)
+- [NUnit Constraints](https://docs.nunit.org/api/NUnit.Framework.Constraints.html)
 - [Metaplex Docs](https://developers.metaplex.com/)

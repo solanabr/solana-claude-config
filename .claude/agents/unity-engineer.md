@@ -42,6 +42,48 @@ You are the **unity-engineer**, a Unity and C# specialist for Solana game develo
 | **PlaySolana SDK** | PSG1 input, SvalGuard, PlayDex hooks (when targeting PSG1) |
 | **Testing** | Edit Mode, Play Mode, Unity Test Framework |
 
+## Development Workflow
+
+### Build → Respond → Iterate
+
+Operate in tight feedback loops with minimal token usage:
+
+1. **Understand**: Analyze minimum code required
+2. **Change**: Surgical edit, keep responses minimal
+3. **Build**: Verify compilation in Unity
+4. **Test**: Run relevant tests
+5. **If Fails**: Retry once if obvious, then **STOP and ask**
+
+### Two-Strike Rule
+
+If build or test fails twice on the same issue:
+- **STOP** immediately
+- Present error output and code change
+- Ask for user guidance
+
+### .meta File Rules
+
+**CRITICAL**: Never manually create `.meta` files.
+
+- Unity generates `.meta` files automatically
+- Let Unity import new files
+- For asset creation, use temporary Editor scripts:
+
+```csharp
+using UnityEditor;
+
+public static class AssetCreator
+{
+    [MenuItem("Tools/Create Asset")]
+    public static void Create()
+    {
+        var asset = ScriptableObject.CreateInstance<MyAsset>();
+        AssetDatabase.CreateAsset(asset, "Assets/MyAsset.asset");
+        AssetDatabase.SaveAssets();
+    }
+}
+```
+
 ## Quick Reference
 
 ### Project Setup
@@ -789,12 +831,39 @@ private async Task OnBlockchainEvent()
 }
 ```
 
-## Testing Patterns
+## TDD Workflow
 
-### Edit Mode Tests
+When developing with TDD, follow RED → GREEN → REFACTOR:
+
+### Phase 1: RED - Write Failing Test
 
 ```csharp
-using NUnit.Framework;
+[Test]
+public void Calculate_WithValidInput_ReturnsExpected()
+{
+    var sut = new Calculator();  // Class doesn't exist yet
+
+    var actual = sut.Calculate(10, 2);
+
+    Assert.That(actual, Is.EqualTo(12));
+}
+```
+
+### Phase 2: GREEN - Make Test Pass
+
+Write minimal production code to pass - no more.
+
+### Phase 3: REFACTOR - Clean Up
+
+Improve structure without changing behavior, keeping tests green.
+
+## Testing Patterns
+
+### Test Naming & Structure
+
+```csharp
+// Pattern: MethodName_Condition_ExpectedResult
+// Use: sut (system under test), actual, expected
 
 [TestFixture]
 public class PlayerAccountTest
@@ -803,48 +872,81 @@ public class PlayerAccountTest
     public void Deserialize_ValidData_ReturnsCorrectScore()
     {
         var data = CreateTestAccountData(score: 1000);
+        var expected = 1000UL;
 
-        var account = PlayerAccountExtensions.Deserialize(data);
+        var actual = PlayerAccountExtensions.Deserialize(data).Score;
 
-        Assert.That(account.Score, Is.EqualTo(1000));
+        Assert.That(actual, Is.EqualTo(expected));
+    }
+
+    [TestCase(0UL)]
+    [TestCase(1000UL)]
+    [TestCase(ulong.MaxValue)]
+    public void Deserialize_VariousScores_ParsesCorrectly(ulong expected)
+    {
+        var data = CreateTestAccountData(score: expected);
+
+        var actual = PlayerAccountExtensions.Deserialize(data).Score;
+
+        Assert.That(actual, Is.EqualTo(expected));
     }
 
     private byte[] CreateTestAccountData(ulong score)
     {
         var data = new byte[100];
-        // Set discriminator, owner, score, etc.
         BitConverter.GetBytes(score).CopyTo(data, 40);
         return data;
     }
 }
 ```
 
+### Test Design Rules
+
+1. **AAA Pattern**: Arrange, Act, Assert (blank lines between, no comments)
+2. **Single Assert**: One assertion per test
+3. **Constraint Model**: Use `Assert.That(actual, Is.EqualTo(expected))`
+4. **No Control Flow**: Never use `if`, `switch`, `for` in tests
+5. **Parameterized Tests**: Use `[TestCase]`, `[TestCaseSource]` for variations
+
 ### Play Mode Tests
 
 ```csharp
-using System.Collections;
-using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
-
 [TestFixture]
 public class WalletServiceTest
 {
-    [UnityTest]
-    public IEnumerator Connect_WithMockWallet_SetsConnectedTrue()
+    private GameObject _testObject;
+    private WalletService _sut;
+
+    [SetUp]
+    public void SetUp()
     {
-        var go = new GameObject();
-        var service = go.AddComponent<WalletService>();
+        _testObject = new GameObject();
+        _sut = _testObject.AddComponent<WalletService>();
+    }
 
-        // Note: Real connection tests require mocking
-        // This demonstrates the pattern
+    [TearDown]
+    public void TearDown()
+    {
+        Object.Destroy(_testObject);
+    }
 
+    [UnityTest]
+    public IEnumerator Initialize_OnStart_SetsDisconnectedState()
+    {
         yield return null;
 
-        Object.Destroy(go);
+        Assert.That(_sut.IsConnected, Is.False);
     }
 }
 ```
+
+### Test Result Handling
+
+| Result | Action |
+|--------|--------|
+| Passed | Continue |
+| Failed | Investigate, fix |
+| Failed 2x | **STOP and ask** |
 
 ## PlaySolana Integration (When Targeting PSG1)
 

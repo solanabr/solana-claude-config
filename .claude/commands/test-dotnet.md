@@ -9,6 +9,96 @@ You are running .NET/C# tests. This command covers Unity Test Framework (Edit Mo
 - [unity.md](../skills/unity.md) - Unity patterns and testing
 - [playsolana.md](../skills/playsolana.md) - PlaySolana specifics
 
+---
+
+## TDD Workflow (6 Phases)
+
+When developing with TDD, follow these phases strictly:
+
+### Phase 1: RED - Write Failing Test
+
+1. Create test file in appropriate location (`Tests/EditMode/` or `Tests/PlayMode/`)
+2. Write minimal test that fails for the right reason
+3. Run test to confirm it fails
+4. **Do NOT write production code yet**
+
+```csharp
+[Test]
+public void Calculate_WithValidInput_ReturnsExpected()
+{
+    var sut = new Calculator();  // Class doesn't exist yet
+
+    var actual = sut.Calculate(10, 2);
+
+    Assert.That(actual, Is.EqualTo(12));
+}
+```
+
+### Phase 2: GREEN - Make Test Pass
+
+1. Write minimal production code to pass the test
+2. **Only write enough code to pass** - no more
+3. Run test to confirm it passes
+4. Commit if green
+
+```csharp
+public class Calculator
+{
+    public int Calculate(int a, int b) => a + b;  // Minimal implementation
+}
+```
+
+### Phase 3: REFACTOR - Clean Up
+
+1. Improve code structure without changing behavior
+2. Run tests after each refactoring step
+3. Keep tests green throughout
+4. Apply SOLID principles, remove duplication
+
+### Phase 4: Iterate
+
+1. Return to Phase 1 for next test case
+2. Build up functionality incrementally
+3. Each cycle: RED → GREEN → REFACTOR
+
+### Phase 5: Integration
+
+1. After unit tests pass, run integration tests
+2. Test component interactions
+3. For Unity: run Play Mode tests
+
+### Phase 6: Review
+
+1. Review test coverage
+2. Check for missing edge cases
+3. Ensure tests are maintainable
+4. Remove any redundant tests
+
+---
+
+## Core Workflow: Build → Respond → Iterate
+
+Operate in fast, surgical development cycles with minimal token usage.
+
+### Execution Flow
+
+1. **Understand the Request**: Analyze minimum code required
+2. **Make the Change**: Implement surgical edit
+3. **Build**: `dotnet build --no-restore --nologo --verbosity minimal`
+4. **If Build Fails**: Retry once if obvious fix, then **STOP and ask**
+5. **Run Tests**: `dotnet test --no-build --nologo --verbosity minimal`
+6. **If Tests Fail**: Extract failures with `rg`, fix if obvious, else **STOP and ask**
+
+### Two-Strike Rule
+
+If build or test fails twice on the same issue:
+1. **STOP** immediately
+2. Present the error output
+3. Show the code change made
+4. Ask for user guidance
+
+---
+
 ## Step 1: Identify Project Type
 
 ```bash
@@ -212,18 +302,70 @@ dotnet test --filter "Name~Connect"
 dotnet test --filter "Category=Integration&Name~Wallet"
 ```
 
-### Focused Failure Analysis
+### Focused Failure Analysis with `rg`
+
+Extract only essential output from failing tests using ripgrep:
 
 ```bash
-echo "🔍 Analyzing test failures..."
+# Standard failure extraction
+dotnet test --no-build --verbosity normal | rg -e "Failed" -e "Error Message:" -e "Stack trace:" -C 4
 
-# Run tests and capture output
-dotnet test --no-build --verbosity normal 2>&1 | tee test_output.txt
+# -C 4: shows 4 lines of context around each match
+```
 
-# Extract failures
-echo ""
-echo "❌ Failed tests summary:"
-grep -E "Failed|Error Message:|Stack Trace:" test_output.txt | head -30
+**Fallbacks if `rg` unavailable:**
+
+```bash
+# Using grep (Unix/macOS)
+dotnet test --no-build --verbosity normal | grep -E "Failed|Error Message:|Stack trace:" -C 4
+
+# Using findstr (Windows)
+dotnet test --no-build --verbosity normal | findstr /I /C:"Failed" /C:"Error Message:" /C:"Stack trace:"
+```
+
+### Test Output Tagging
+
+When writing tests, use unique test-specific tags for precise log filtering:
+
+```csharp
+[Test]
+public void CalculateReward_WithMultiplier_ReturnsScaledAmount()
+{
+    var testId = "TEST-REWARD-CALC-001";
+    Console.WriteLine($"[{testId}] Starting test execution");
+
+    try
+    {
+        var sut = new RewardCalculator();
+        var actual = sut.Calculate(100UL, 1.5f);
+
+        Console.WriteLine($"[{testId}] Result: {actual}");
+        Assert.That(actual, Is.EqualTo(150UL));
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[{testId}-FAIL] Error: {ex.Message}");
+        throw;
+    }
+}
+
+[Test]
+public void CalculateReward_WithZeroBase_ReturnsZero()
+{
+    var testId = "TEST-REWARD-CALC-002";
+    Console.WriteLine($"[{testId}] Starting zero base test");
+    // Different test with its own unique ID
+}
+```
+
+**Filter by test ID:**
+
+```bash
+# Find all output for specific test
+dotnet test --no-build --verbosity normal | rg "\[TEST-REWARD-CALC-001" -C 4
+
+# Find only failures for specific test
+dotnet test --no-build --verbosity normal | rg "\[TEST-REWARD-CALC-001-FAIL\]" -C 4
 ```
 
 ---
