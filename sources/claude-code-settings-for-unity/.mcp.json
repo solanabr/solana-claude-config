@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "UnityNaturalMCP": {
+      "type": "http",
+      "url": "http://localhost:56780/mcp"
+    },
+    "jetbrains": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@jetbrains/mcp-proxy"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "env": {
+    "MCP_TIMEOUT": "5000",
+    "MCP_TOOL_TIMEOUT": "180000"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(rg:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:docs.unity3d.com)",
+      "WebFetch(domain:forum.unity.com)",
+      "WebFetch(domain:discussions.unity.com)",
+      "mcp__unity-natural-mcp",
+      "mcp__jetbrains",
+      "mcp__ide__getDiagnostics"
+    ],
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(rm:*)",
+      "Bash(rm -rf:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(nc:*)",
+      "Bash(npm:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git reset:*)",
+      "Bash(git rebase:*)",
+      "Bash(git commit --amend:*)",
+      "Bash(git push -f:*)",
+      "Read(.env.*)",
+      "Read(id_rsa)",
+      "Read(id_ed25519)",
+      "Read(**/*token*)",
+      "Read(**/*key*)",
+      "Read(!**/*monkey*)",
+      "Read(node_modules/**)",
+      "Read(./Library/**)",
+      "Read(!./Library/PackageCache/**)",
+      "Edit(./Packages/packages-lock.json)",
+      "Write(.env*)",
+      "Write(**/secrets/**)"
+    ],
+    "defaultMode": "plan",
+    "additionalDirectories": []
+  },
+  "enabledMcpjsonServers": [
+    "UnityNaturalMCP",
+    "jetbrains"
+  ],
+  "enabledPlugins": {
+    "csharp-lsp@claude-plugins-official": true
+  }
+}
