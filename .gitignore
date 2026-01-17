@@ -6,6 +6,7 @@
 .env.development
 .env.test
 *.env
+.secrets
 
 # Secrets and keys
 *.pem
