@@ -1,9 +1,0 @@
-{
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "statusLine": {
-    "type": "command",
-    "command": "/path/to/your/statusline",
-    "padding": 0
-  },
-  "alwaysThinkingEnabled": false
-}
