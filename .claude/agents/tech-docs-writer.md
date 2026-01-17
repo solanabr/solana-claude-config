@@ -270,6 +270,13 @@ import { YourProgram } from '@your-org/sdk';
 - Testing strategies
 - CU optimization techniques
 
+### For Unity/Game Developers
+- Focus on Solana.Unity-SDK patterns
+- C#/.NET async patterns for blockchain
+- PlaySolana/PSG1 integration specifics
+- NFT loading and display patterns
+- In-game wallet integration
+
 ## Solana-Specific Guidelines
 
 ### PDA Documentation

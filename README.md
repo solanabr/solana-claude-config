@@ -68,7 +68,7 @@ Claude will spawn each specialized agent by itself based on context.
 ├── README.md                    # This file
 ├── LICENSE                      # MIT
 └── .claude/
-    ├── agents/                      # 9 specialized agents
+    ├── agents/                      # 11 specialized agents
     │   ├── solana-architect.md          # System design, PDAs, architecture
     │   ├── anchor-engineer.md           # Anchor framework development
     │   ├── pinocchio-engineer.md        # CU optimization, zero-copy
@@ -77,9 +77,11 @@ Claude will spawn each specialized agent by itself based on context.
     │   ├── solana-qa-engineer.md        # Testing, CU profiling, code quality
     │   ├── tech-docs-writer.md          # Documentation
     │   ├── game-architect.md            # Solana game design, Unity architecture
-    │   └── unity-engineer.md            # Unity/C# implementation, Solana.Unity-SDK
+    │   ├── unity-engineer.md            # Unity/C# implementation, Solana.Unity-SDK
+    │   ├── solana-guide.md              # Learning, tutorials, concept explanations
+    │   └── solana-researcher.md         # Ecosystem research, protocol investigation
     │
-    ├── commands/                # 11 workflow commands
+    ├── commands/                # 14 workflow commands
     │   ├── quick-commit.md          # Branch creation, format, lint, commit
     │   ├── build-program.md         # Build Solana programs
     │   ├── build-app.md             # Build web clients
@@ -90,7 +92,10 @@ Claude will spawn each specialized agent by itself based on context.
     │   ├── test-and-fix.md          # Automated test→fix loop
     │   ├── deploy.md                # Deploy (devnet first, then mainnet)
     │   ├── audit-solana.md          # Security audit workflow
-    │   └── setup-ci-cd.md           # GitHub Actions setup
+    │   ├── setup-ci-cd.md           # GitHub Actions setup
+    │   ├── write-docs.md            # Generate documentation
+    │   ├── explain-code.md          # Explain complex code with diagrams
+    │   └── plan-feature.md          # Plan feature implementation
     │
     ├── skills/                   # Progressive-loading knowledge
     │   ├── SKILL.md                  # Entry point, routing guide
@@ -132,6 +137,8 @@ Claude will spawn each specialized agent by itself based on context.
 | **tech-docs-writer** | READMEs, API docs, integration guides | Sonnet |
 | **game-architect** | Solana game design, Unity architecture, on-chain game state, PlaySolana | Opus |
 | **unity-engineer** | Unity/C# implementation, Solana.Unity-SDK, wallet integration, NFT display | Sonnet |
+| **solana-guide** | Learning, tutorials, concept explanations, progressive learning paths | Sonnet |
+| **solana-researcher** | Ecosystem research, protocol investigation, SDK analysis | Sonnet |
 
 ## Commands
 
@@ -147,6 +154,9 @@ Claude will spawn each specialized agent by itself based on context.
 | `/deploy` | Deploy to devnet (always first) or mainnet |
 | `/audit-solana` | Comprehensive security audit |
 | `/setup-ci-cd` | Configure GitHub Actions pipeline |
+| `/write-docs` | Generate documentation for programs, APIs, components |
+| `/explain-code` | Explain complex code with visual diagrams |
+| `/plan-feature` | Plan feature implementation with specifications |
 
 ## GitHub Action for Team Collaboration
 

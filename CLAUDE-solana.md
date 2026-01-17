@@ -48,9 +48,11 @@ Summon specialized agents for complex tasks:
 | **solana-frontend-engineer** | React/Next.js UI, wallet flows, transaction UX, accessibility |
 | **rust-backend-engineer** | Axum APIs, indexers, WebSocket services, async patterns |
 | **solana-qa-engineer** | Testing (Mollusk/LiteSVM/Trident), CU profiling, code quality |
-| **tech-docs-writer** | READMEs, API docs, integration guides |
+| **tech-docs-writer** | READMEs, API docs, integration guides, Unity component docs |
 | **game-architect** | Solana game design, Unity architecture, on-chain game state, PlaySolana ecosystem |
 | **unity-engineer** | Unity/C# implementation, Solana.Unity-SDK, wallet connection, NFT display |
+| **solana-guide** | Learning, tutorials, concept explanations, progressive learning paths |
+| **solana-researcher** | Ecosystem research, protocol investigation, SDK capabilities |
 
 ## Mandatory Workflow
 
@@ -131,6 +133,9 @@ Rules (always-on constraints): `.claude/rules/`
 | `/deploy` | Deploy to devnet or mainnet |
 | `/audit-solana` | Security audit workflow |
 | `/setup-ci-cd` | Configure GitHub Actions |
+| `/write-docs` | Generate documentation for programs/APIs/components |
+| `/explain-code` | Explain complex code with visual diagrams |
+| `/plan-feature` | Plan feature implementation with specs |
 
 ## Pre-Mainnet Checklist
 
