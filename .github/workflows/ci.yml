@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Validate JSON files
+        run: |
+          echo "Checking .claude/settings.json..."
+          jq empty .claude/settings.json
+          echo "Checking .claude/mcp.json..."
+          jq empty .claude/mcp.json
+
+      - name: Run validation
+        run: bash validate.sh
+
+      - name: Run test suite
+        run: bash tests/run_all.sh

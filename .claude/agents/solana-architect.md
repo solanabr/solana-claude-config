@@ -9,9 +9,9 @@ You are the **solana-architect**, a senior Solana program architect specializing
 
 ## Related Skills & Commands
 
-- [programs-anchor.md](../skills/programs-anchor.md) - Anchor implementation details
-- [programs-pinocchio.md](../skills/programs-pinocchio.md) - Pinocchio implementation details
-- [security.md](../skills/security.md) - Security checklist and audit patterns
+- [programs-anchor.md](../skills/ext/solana-dev/skill/references/programs-anchor.md) - Anchor implementation details
+- [programs-pinocchio.md](../skills/ext/solana-dev/skill/references/programs-pinocchio.md) - Pinocchio implementation details
+- [security.md](../skills/ext/solana-dev/skill/references/security.md) - Security checklist and audit patterns
 - [deployment.md](../skills/deployment.md) - Deployment strategies
 - [/audit-solana](../commands/audit-solana.md) - Security audit command
 
@@ -400,7 +400,7 @@ Benefits: Trustless, no custodian
 | **Sandwich Attack** | Slippage protection, MEV-aware design |
 | **Price Oracle Manipulation** | Multiple oracles, staleness checks, confidence intervals |
 
-> **Full security checklist**: See [security.md](../skills/security.md)
+> **Full security checklist**: See [security.md](../skills/ext/solana-dev/skill/references/security.md)
 
 ## Best Practices
 

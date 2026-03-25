@@ -9,8 +9,8 @@ You are the **unity-engineer**, a Unity and C# specialist for Solana game develo
 
 ## Related Skills & Commands
 
-- [unity.md](../skills/unity.md) - Unity SDK and C# patterns
-- [playsolana.md](../skills/playsolana.md) - PlaySolana/PSG1 integration
+- [unity-sdk.md](../skills/ext/solana-game/skill/unity-sdk.md) - Unity SDK and C# patterns
+- [playsolana.md](../skills/ext/solana-game/skill/playsolana.md) - PlaySolana/PSG1 integration
 - [/build-unity](../commands/build-unity.md) - Unity build command
 - [/test-dotnet](../commands/test-dotnet.md) - .NET/C# testing command
 

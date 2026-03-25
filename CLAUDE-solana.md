@@ -14,45 +14,10 @@ You are **solana-builder** for full-stack Solana blockchain development.
 **All new work starts on a new branch.**
 
 ```bash
-# Before starting any task on main/master:
 git checkout -b <type>/<scope>-<description>-<DD-MM-YYYY>
-
-# Examples:
-# feat/program-vault-15-01-2026
-# fix/frontend-auth-15-01-2026
-# docs/readme-15-01-2026
 ```
 
 Use `/quick-commit` command to automate branch creation and commits.
-
-## Technology Stack (2026)
-
-| Layer | Stack |
-|-------|-------|
-| **Programs** | Anchor 0.31+, Pinocchio 0.10+, Rust 1.82+ |
-| **Testing** | Mollusk, LiteSVM, Surfpool, Trident, Unity Test Framework |
-| **Frontend** | @solana/kit, Next.js 15, React 19, Tailwind 4.0 |
-| **Backend** | Axum 0.8+, Tokio 1.40+, sqlx |
-| **Unity Games** | Solana.Unity-SDK, Unity 6000+, .NET 9, C# 13 |
-| **PlaySolana** | PSG1 console, PlayDex, PlayID, SvalGuard |
-
-## Agents
-
-Summon specialized agents for complex tasks:
-
-| Agent | Use When |
-|-------|----------|
-| **solana-architect** | System design, PDA schemes, multi-program architecture, token economics |
-| **anchor-engineer** | Building programs with Anchor, IDL generation, constraints, rapid development |
-| **pinocchio-engineer** | CU optimization, zero-copy, performance-critical programs |
-| **solana-frontend-engineer** | React/Next.js UI, wallet flows, transaction UX, accessibility |
-| **rust-backend-engineer** | Axum APIs, indexers, WebSocket services, async patterns |
-| **solana-qa-engineer** | Testing (Mollusk/LiteSVM/Trident), CU profiling, code quality |
-| **tech-docs-writer** | READMEs, API docs, integration guides, Unity component docs |
-| **game-architect** | Solana game design, Unity architecture, on-chain game state, PlaySolana ecosystem |
-| **unity-engineer** | Unity/C# implementation, Solana.Unity-SDK, wallet connection, NFT display |
-| **solana-guide** | Learning, tutorials, concept explanations, progressive learning paths |
-| **solana-researcher** | Ecosystem research, protocol investigation, SDK capabilities |
 
 ## Mandatory Workflow
 
@@ -80,88 +45,73 @@ Every program change:
 - Reload accounts after CPIs if modified
 - Validate CPI target program IDs
 
+## MCP Servers
+
+MCP servers are configured in `.claude/mcp.json`. Available servers:
+- **Helius** — 60+ tools: RPC, DAS API, webhooks, priority fees, token metadata
+- **Context7** — Up-to-date library documentation lookup
+- **Puppeteer** — Browser automation for dApp testing
+
+Run `/setup-mcp` to configure API keys and verify connections.
+
+## Agent Teams
+
+Agent teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Create teams via natural language:
+
+```
+"Create an agent team: solana-architect for design, anchor-engineer for implementation, solana-qa-engineer for testing"
+```
+
+Recommended patterns: program-ship, full-stack, audit-and-fix, game-ship, research-and-build, defi-compose, token-launch.
+
+## Lessons Learned & Antipatterns
+
+Common mistakes to avoid:
+- Don't use `@solana/web3.js` in new code — use `@solana/kit` (run `/migrate-web3` to migrate)
+- Don't recalculate PDA bumps on every call — store canonical bump at account creation
+- Don't skip account reload after CPI — state may have changed
+- Don't use `unwrap()` in programs — it panics with unhelpful errors, use `ok_or(ErrorCode::...)?`
+- Don't deploy without simulating first — `anchor deploy --provider.cluster devnet`
+- Don't hardcode RPC URLs — use environment variables or config
+- Don't use `solana-test-validator` for unit tests — use LiteSVM or Mollusk (faster, in-process)
+- Don't ignore Token-2022 extensions — check for transfer hooks, confidential transfers
+- Watch for AI-generated over-defensive code: excessive try/catch, redundant validation, verbose error messages
+
+## Patterns That Work
+
+- Use SKILL.md hub (`.claude/skills/SKILL.md`) to find the right reference before implementing
+- Spawn specialized agents for cross-domain work
+- Use agent teams for multi-step workflows (architect → engineer → QA)
+- Use MCP servers for real-time data (Helius for on-chain data, Context7 for docs)
+- Use Surfpool for realistic integration testing against mainnet/devnet state
+- Use checked arithmetic everywhere, no exceptions
+- Store canonical PDA bumps at account creation
+- Use `@solana/kit` types (`Address`, `Signer`, transaction message APIs, codecs)
+- Use `create-solana-dapp` for new frontend projects
+- Profile CU usage during development, not after (`/profile-cu`, `/benchmark`)
+
 ## Code Quality: AI Slop Removal
 
-Before completing any branch, check diff against main:
+Before completing any branch, run `/diff-review` or check diff against main:
 
 ```bash
 git diff main...HEAD
 ```
 
-**Remove:**
-- Excessive comments stating the obvious
-- Defensive try/catch blocks abnormal for the codebase
-- Verbose error messages where simple ones suffice
-- Redundant validation of already-validated data
-- Style inconsistent with the rest of the file
+**Remove**: Excessive comments, abnormal try/catch, verbose errors, redundant validation, style inconsistencies.
 
-**Keep:**
-- Legitimate security checks
-- Comments explaining non-obvious logic
-- Error handling matching existing patterns
-
-**Report 1-3 sentence summary of cleanup.**
-
-## Skill System
-
-Entry point: `.claude/skills/SKILL.md`
-
-| Category | Files |
-|----------|-------|
-| **Programs** | programs-anchor.md, programs-pinocchio.md |
-| **Frontend** | frontend-framework-kit.md, kit-web3-interop.md |
-| **Backend** | backend-async.md |
-| **Testing** | testing.md |
-| **Security** | security.md |
-| **Deployment** | deployment.md |
-| **Ecosystem** | ecosystem.md, resources.md |
-| **Unity/Games** | unity.md, playsolana.md |
-
-Rules (always-on constraints): `.claude/rules/`
-
-## Commands
-
-| Command | Purpose |
-|---------|---------|
-| `/quick-commit` | Format, lint, branch creation, conventional commits |
-| `/build-program` | Build Solana program (Anchor/native) |
-| `/build-app` | Build web client (Next.js/Vite) |
-| `/build-unity` | Build Unity project (WebGL/Desktop/PSG1) |
-| `/test-rust` | Run Rust tests (Mollusk/LiteSVM/Trident) |
-| `/test-ts` | Run TypeScript tests (Anchor/Vitest/Playwright) |
-| `/test-dotnet` | Run .NET/C# tests (Unity Test Framework) |
-| `/deploy` | Deploy to devnet or mainnet |
-| `/audit-solana` | Security audit workflow |
-| `/setup-ci-cd` | Configure GitHub Actions |
-| `/write-docs` | Generate documentation for programs/APIs/components |
-| `/explain-code` | Explain complex code with visual diagrams |
-| `/plan-feature` | Plan feature implementation with specs |
+**Keep**: Legitimate security checks, non-obvious comments, matching error patterns.
 
 ## Pre-Mainnet Checklist
 
 - [ ] All tests passing (unit + integration + fuzz 10+ min)
-- [ ] Security audit completed
+- [ ] Security audit completed (`/audit-solana`)
 - [ ] Verifiable build (`anchor build --verifiable`)
-- [ ] CU optimization verified
+- [ ] CU optimization verified (`/profile-cu`)
 - [ ] Devnet testing successful (multiple days)
-- [ ] AI slop removed from branch
+- [ ] AI slop removed from branch (`/diff-review`)
 - [ ] User explicit confirmation received
-
-## Quick Reference
-
-```bash
-# New feature
-git checkout -b feat/program-feature-15-01-2026
-# ... work ...
-cargo fmt && cargo clippy -- -W clippy::all
-anchor test
-git diff main...HEAD  # Review for slop
-/quick-commit
-
-# Deploy flow
-/deploy  # Always devnet first
-```
 
 ---
 
-**Skills**: `.claude/skills/` | **Rules**: `.claude/rules/` | **Commands**: `.claude/commands/` | **Agents**: `.claude/agents/`
+**Skills**: `.claude/skills/SKILL.md` | **Rules**: `.claude/rules/` | **Commands**: `.claude/commands/` | **Agents**: `.claude/agents/` | **MCP**: `.claude/mcp.json`

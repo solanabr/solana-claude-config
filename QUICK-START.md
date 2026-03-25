@@ -3,15 +3,16 @@
 ## TL;DR
 
 ```bash
-# 1. Clone or download this repo
-git clone https://github.com/your-org/solana-claude-config.git
+# Option 1: One-liner installer (recommended)
+curl -fsSL https://raw.githubusercontent.com/riotavares/solana-claude-config/main/install.sh | bash
 
-# 2. Copy to your Solana project
+# Option 2: Manual setup
+git clone --recurse-submodules https://github.com/riotavares/solana-claude-config.git
 cp -r solana-claude-config/.claude /path/to/your-project/
 cp solana-claude-config/CLAUDE-solana.md /path/to/your-project/CLAUDE.md
+cd /path/to/your-project && git submodule update --init --recursive
 
-# 3. Start Claude Code in your project
-cd /path/to/your-project
+# Start Claude Code
 claude
 ```
 
@@ -19,46 +20,75 @@ That's it. Claude now has Solana superpowers.
 
 ---
 
+## Optional: Configure MCP Servers
+
+After setup, run `/setup-mcp` in Claude Code to configure:
+- **Helius** — On-chain data, DAS API, webhooks (needs API key from helius.dev)
+- **Context7** — Library documentation lookup (no key needed)
+- **Puppeteer** — Browser automation for dApp testing (no key needed)
+
+---
+
 ## What You Get
 
-### 11 Specialized Agents
+### 15 Specialized Agents
 
 | Agent | Use For |
 |-------|---------|
 | **solana-architect** | System design, account structures, PDAs |
 | **anchor-engineer** | Anchor program development |
 | **pinocchio-engineer** | CU-optimized native programs |
-| **game-architect** | Solana game design, concept docs |
-| **unity-engineer** | Unity/C# with Solana.Unity-SDK |
+| **defi-engineer** | DeFi integrations (Jupiter, Drift, Kamino, etc.) |
+| **token-engineer** | Token-2022 extensions, token launches |
 | **solana-frontend-engineer** | React/Next.js dApp frontends |
+| **mobile-engineer** | React Native/Expo mobile dApps |
 | **rust-backend-engineer** | Rust backend services |
+| **devops-engineer** | CI/CD, monitoring, infrastructure |
 | **solana-qa-engineer** | Testing, fuzzing, security |
 | **tech-docs-writer** | Documentation |
+| **game-architect** | Solana game design, concept docs |
+| **unity-engineer** | Unity/C# with Solana.Unity-SDK |
 | **solana-guide** | Learning and tutorials |
 | **solana-researcher** | Ecosystem research |
 
-### 14 Slash Commands
+### 22 Slash Commands
 
 **Building:**
 - `/build-program` - Build Anchor or native programs
+- `/build-app` - Build web client
 - `/build-unity` - Build Unity projects (WebGL, PSG1)
+- `/scaffold` - Generate project scaffolding
 
-**Testing:**
+**Testing & Quality:**
 - `/test-rust` - Run Rust tests
 - `/test-typescript` - Run TypeScript tests
 - `/test-dotnet` - Run .NET/Unity tests
 - `/test-and-fix` - Run tests and auto-fix issues
 - `/audit-solana` - Security audit
+- `/diff-review` - AI-powered diff review
+- `/profile-cu` - CU profiling per instruction
+- `/benchmark` - CU benchmarks before/after
 
-**Deployment:**
+**Deployment & Migration:**
 - `/deploy` - Deploy to devnet/mainnet
+- `/migrate-web3` - Migrate web3.js → @solana/kit
+- `/generate-idl-client` - Generate typed clients from IDL
 
-**Workflow:**
+**Workflow & Setup:**
 - `/quick-commit` - Format, lint, and commit
 - `/setup-ci-cd` - Setup CI/CD pipeline
+- `/setup-mcp` - Configure MCP servers
+- `/update-skills` - Update external skill submodules
 - `/write-docs` - Generate documentation
 - `/explain-code` - Explain complex code
 - `/plan-feature` - Plan feature implementation
+
+### Agent Teams
+
+Create multi-agent workflows:
+```
+"Create an agent team: architect for design, anchor-engineer for code, qa-engineer for tests"
+```
 
 ### Auto-Loading Rules
 
@@ -73,8 +103,10 @@ Knowledge loads on-demand:
 - Solana fundamentals
 - Anchor patterns
 - Token-2022 extensions
+- DeFi protocol integrations
 - Unity SDK patterns
 - PlaySolana/PSG1 integration
+- Security auditing
 
 ---
 
@@ -99,7 +131,7 @@ Knowledge loads on-demand:
 ### Platforms
 - **Web** - React, Next.js
 - **Desktop** - Tauri, Electron
-- **Mobile** - React Native
+- **Mobile** - React Native, Expo
 - **Gaming** - Unity (WebGL, PSG1)
 
 ---
@@ -110,9 +142,20 @@ Knowledge loads on-demand:
 your-project/
 ├── CLAUDE.md              # ← Main config (copied from CLAUDE-solana.md)
 ├── .claude/
-│   ├── agents/            # Specialized AI agents
-│   ├── commands/          # Slash commands
+│   ├── agents/            # 15 specialized AI agents
+│   ├── commands/          # 22 slash commands
 │   ├── skills/            # Progressive knowledge
+│   │   ├── SKILL.md           # Unified hub (start here)
+│   │   ├── ext/               # External skill submodules
+│   │   │   ├── solana-dev/        # Core Solana (Foundation)
+│   │   │   ├── sendai/            # DeFi protocols
+│   │   │   ├── solana-game/       # Game dev (Unity, PSG1)
+│   │   │   ├── cloudflare/        # Infrastructure
+│   │   │   └── trailofbits/       # Security auditing
+│   │   ├── token-2022.md     # Token Extensions guide
+│   │   ├── backend-async.md  # Axum/Tokio patterns
+│   │   └── deployment.md     # Deploy workflows
+│   ├── mcp.json           # MCP server configs
 │   ├── rules/             # Auto-loading rules
 │   └── settings.json      # Permissions
 ├── programs/              # Your Solana programs
@@ -130,6 +173,12 @@ You: Create an escrow program
 Claude: [Uses solana-architect to design, anchor-engineer to implement]
 ```
 
+### DeFi Integration
+```
+You: Integrate Jupiter swaps into the program
+Claude: [Uses defi-engineer with Jupiter protocol skills]
+```
+
 ### Build and Test
 ```
 You: /build-program
@@ -139,16 +188,22 @@ You: /test-rust
 Claude: [Runs cargo test, shows results]
 ```
 
+### Profile Performance
+```
+You: /profile-cu
+Claude: [Reports CU usage per instruction, suggests optimizations]
+```
+
 ### Deploy
 ```
 You: /deploy devnet
 Claude: [Deploys to devnet, provides program ID]
 ```
 
-### Get Help
+### Token Launch
 ```
-You: Explain how PDAs work
-Claude: [Uses solana-guide agent with visual diagrams]
+You: Create a Token-2022 token with transfer fees
+Claude: [Uses token-engineer with token-2022.md skill]
 ```
 
 ---
@@ -169,32 +224,22 @@ Edit your `CLAUDE.md` to add:
 
 ### Adjust Permissions
 
-Edit `.claude/settings.json`:
+Edit `.claude/settings.json` to customize allowed commands.
 
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(anchor build)",
-      "Bash(cargo test)"
-    ]
-  }
-}
-```
+### Configure MCP Servers
+
+Edit `.claude/mcp.json` to add API keys or additional MCP servers.
 
 ---
 
 ## Updating
 
-To get the latest config:
-
 ```bash
-cd solana-claude-config
-git pull
+# Update config to latest version
+bash update.sh /path/to/your-project
 
-# Re-copy to your project
-cp -r .claude /path/to/your-project/
-cp CLAUDE-solana.md /path/to/your-project/CLAUDE.md
+# Or update submodules only
+/update-skills
 ```
 
 ---
@@ -214,14 +259,24 @@ cp CLAUDE-solana.md /path/to/your-project/CLAUDE.md
 - Verify agent file exists in `.claude/agents/`
 - Check agent description matches your request
 
+**MCP servers not connecting:**
+- Run `/setup-mcp` to verify configuration
+- Check API keys are set in environment
+
+**Submodules empty:**
+- Run `git submodule update --init --recursive`
+- Or run `/update-skills`
+
 ---
 
 ## Resources
 
 - [CLAUDE-solana.md](./CLAUDE-solana.md) - Full configuration reference
-- [.claude/agents/](./claude/agents/) - All agent definitions
-- [.claude/commands/](./claude/commands/) - All commands
-- [.claude/skills/](./claude/skills/) - Knowledge base
+- [CHANGELOG.md](./CHANGELOG.md) - Version history
+- [.claude/agents/](./.claude/agents/) - All agent definitions
+- [.claude/commands/](./.claude/commands/) - All commands
+- [.claude/skills/](./.claude/skills/) - Knowledge base
+- [.claude/mcp.json](./.claude/mcp.json) - MCP server configs
 
 ---
 

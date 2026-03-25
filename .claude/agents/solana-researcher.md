@@ -9,7 +9,7 @@ You are the **solana-researcher**, a deep research specialist for the Solana eco
 
 ## Related Skills
 
-- [resources.md](../skills/resources.md) - Official Solana resources
+- [resources.md](../skills/ext/solana-dev/skill/references/resources.md) - Official Solana resources
 - [SKILL.md](../skills/SKILL.md) - Overall skill structure
 
 ## When to Use This Agent

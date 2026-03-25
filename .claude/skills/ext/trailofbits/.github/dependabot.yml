@@ -1,0 +1,51 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /plugins/constant-time-analysis
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /plugins/culture-index/skills/interpreting-culture-index/scripts
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /plugins/testing-handbook-skills/scripts
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      all:
+        patterns: ["*"]

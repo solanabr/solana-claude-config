@@ -1,0 +1,94 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate plugins and skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Validate SKILL.md frontmatter
+        run: |
+          echo "Checking SKILL.md frontmatter..."
+          python3 -c "
+          import os
+          import re
+          import sys
+
+          errors = []
+          skill_count = 0
+
+          for root, dirs, files in os.walk('plugins'):
+              for f in files:
+                  if f == 'SKILL.md':
+                      path = os.path.join(root, f)
+                      skill_count += 1
+                      with open(path) as fp:
+                          content = fp.read()
+
+                      # Check for frontmatter
+                      if not content.startswith('---'):
+                          errors.append(f'{path}: missing YAML frontmatter')
+                          continue
+
+                      # Extract frontmatter
+                      match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
+                      if not match:
+                          errors.append(f'{path}: malformed frontmatter')
+                          continue
+
+                      frontmatter = match.group(1)
+
+                      # Check for required fields
+                      if 'name:' not in frontmatter:
+                          errors.append(f'{path}: missing \"name\" in frontmatter')
+                      if 'description:' not in frontmatter:
+                          errors.append(f'{path}: missing \"description\" in frontmatter')
+
+          if errors:
+              for e in errors:
+                  print(f'ERROR: {e}', file=sys.stderr)
+              sys.exit(1)
+
+          print(f'All {skill_count} SKILL.md files have valid frontmatter')
+          "
+
+      - name: Check for hardcoded paths
+        run: |
+          echo "Checking for hardcoded user paths..."
+          # Exclude /path/to (example paths) and /home/vscode (standard devcontainer user)
+          if grep -rPn '(?<![a-zA-Z])(/home/[a-z]|/Users/[A-Z])' plugins/ --include='*.md' --include='*.py' --include='*.json' | grep -v '/path/to' | grep -v '/home/vscode'; then
+            echo "ERROR: Found hardcoded user paths (see above)"
+            exit 1
+          fi
+          echo "No hardcoded user paths found"
+
+      - name: Check for personal emails
+        run: |
+          echo "Checking for personal emails..."
+          if grep -r '@trailofbits.com' . --include='*.json' --include='*.toml' | grep -v 'opensource@trailofbits.com' | grep -v '.git'; then
+            echo "ERROR: Found personal emails (should use opensource@trailofbits.com)"
+            exit 1
+          fi
+          echo "No personal emails found"
+
+      - name: Validate plugin metadata
+        run: python3 .github/scripts/validate_plugin_metadata.py
+
+      - name: Validate Codex skill mappings
+        run: python3 .github/scripts/validate_codex_skills.py

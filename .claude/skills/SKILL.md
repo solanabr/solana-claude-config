@@ -1,140 +1,113 @@
 ---
 name: solana-dev
-description: End-to-end Solana development playbook (Jan 2026). Prefer Solana Foundation framework-kit (@solana/client + @solana/react-hooks) for React/Next.js UI. Prefer @solana/kit for all new client/RPC/transaction code. When legacy dependencies require web3.js, isolate it behind @solana/web3-compat (or @solana/web3.js as a true legacy fallback). Covers wallet-standard-first connection (incl. ConnectorKit), Anchor/Pinocchio programs, Codama-based client generation, LiteSVM/Mollusk/Surfpool testing, and security checklists.
+description: Unified skill hub for Solana development. Routes to external submodule skills (solana-foundation, sendai, solana-game, trailofbits, cloudflare) and local skills. Progressive disclosure — read only what you need.
 user-invocable: true
 ---
 
-# Solana Development Skill (framework-kit-first)
+# Solana Development Skill Hub
 
-## What this Skill is for
+Routes to the right skill file based on the task. Read the relevant section, follow the link, load that skill.
 
-Use this Skill when the user asks for:
-- Solana dApp UI work (React / Next.js)
-- Wallet connection + signing flows
-- Transaction building / sending / confirmation UX
-- On-chain program development (Anchor or Pinocchio)
-- Client SDK generation (typed program clients)
-- Local testing (LiteSVM, Mollusk, Surfpool)
-- Security hardening and audit-style reviews
-- Backend services (indexers, APIs, RPC integration)
-- Deployment workflows (devnet → mainnet)
+## Core Solana Development
 
-## Default stack decisions (opinionated)
+**Primary entry point** — read first for any Solana program, frontend, testing, or client task:
 
-### 1) UI: framework-kit first
-- Use `@solana/client` + `@solana/react-hooks`
-- Prefer Wallet Standard discovery/connect via the framework-kit client
-- Use `create-solana-dapp` for new projects
+- [ext/solana-dev/skill/SKILL.md](ext/solana-dev/skill/SKILL.md) — Solana Foundation skill (framework-kit-first, Kit types, wallet-standard)
 
-### 2) SDK: @solana/kit first
-- Prefer Kit types (`Address`, `Signer`, transaction message APIs, codecs)
-- Prefer `@solana-program/*` instruction builders over hand-rolled instruction data
-- Use BigInt for u64/u128 values
+Key references within:
+- [programs-anchor.md](ext/solana-dev/skill/references/programs-anchor.md) — Anchor patterns, IDL, constraints
+- [programs-pinocchio.md](ext/solana-dev/skill/references/programs-pinocchio.md) — Zero-copy, CU optimization
+- [frontend-framework-kit.md](ext/solana-dev/skill/references/frontend-framework-kit.md) — React hooks, wallet connection, @solana/kit UI
+- [kit-web3-interop.md](ext/solana-dev/skill/references/kit-web3-interop.md) — Kit ↔ web3.js boundary patterns
+- [testing.md](ext/solana-dev/skill/references/testing.md) — LiteSVM, Mollusk, Surfpool, CI
+- [security.md](ext/solana-dev/skill/references/security.md) — Vulnerability categories, checklists
+- [idl-codegen.md](ext/solana-dev/skill/references/idl-codegen.md) — Codama/Shank client generation
+- [payments.md](ext/solana-dev/skill/references/payments.md) — Commerce Kit, Kora, Solana Pay
+- [resources.md](ext/solana-dev/skill/references/resources.md) — Official documentation links
 
-### 3) Legacy compatibility: web3.js only at boundaries
-- If you must integrate a library that expects web3.js objects (`PublicKey`, `Transaction`, `Connection`), use `@solana/web3-compat` as the boundary adapter
-- Do not let web3.js types leak across the entire app; contain them to adapter modules
-- See kit-web3-interop.md for adapter patterns
+## Token Extensions
 
-### 4) Programs
-- **Default**: Anchor (fast iteration, IDL generation, mature tooling)
-- **Performance/footprint**: Pinocchio when you need CU optimization, minimal binary size, zero dependencies, or fine-grained control over parsing/allocations
+- [token-2022.md](token-2022.md) — SPL Token-2022 extensions: transfer hooks, confidential transfers, transfer fees, metadata, CPI guard, soulbound tokens, and all extension types with Anchor/native patterns
 
-### 5) Testing
-- **Default**: LiteSVM or Mollusk for unit tests (fast feedback, runs in-process)
-- Use Surfpool for integration tests against realistic cluster state (mainnet/devnet) locally
-- Use solana-test-validator only when you need specific RPC behaviors not emulated by LiteSVM
+## DeFi & Ecosystem Protocols
 
-### 6) Backend
-- **Framework**: Axum 0.8+ with Tokio 1.40+
-- **Critical**: Use `spawn_blocking` for Solana RPC calls (they block!)
-- **Database**: sqlx with compile-time checked queries
-- **Caching**: Redis for RPC response caching
+Protocol-specific skills from [SendAI](ext/sendai/skills/):
 
-## Operating procedure (how to execute tasks)
+| Protocol | Skill | Use for |
+|----------|-------|---------|
+| Jupiter | [jupiter/](ext/sendai/skills/jupiter/) | Swaps, DCA, limit orders |
+| Drift | [drift/](ext/sendai/skills/drift/) | Perpetuals, margin trading |
+| Raydium | [raydium/](ext/sendai/skills/raydium/) | AMM, CLMM pools |
+| Meteora | [meteora/](ext/sendai/skills/meteora/) | DLMM, dynamic pools |
+| Orca | [orca/](ext/sendai/skills/orca/) | Whirlpools, concentrated liquidity |
+| Kamino | [kamino/](ext/sendai/skills/kamino/) | Lending, vaults |
+| Marginfi | [marginfi/](ext/sendai/skills/marginfi/) | Lending protocol |
+| Sanctum | [sanctum/](ext/sendai/skills/sanctum/) | LST staking |
+| Metaplex | [metaplex/](ext/sendai/skills/metaplex/) | NFT standards, metadata |
+| PumpFun | [pumpfun/](ext/sendai/skills/pumpfun/) | Token launch |
+| Pyth | [pyth/](ext/sendai/skills/pyth/) | Price oracles |
+| Switchboard | [switchboard/](ext/sendai/skills/switchboard/) | Oracles, VRF |
+| Squads | [squads/](ext/sendai/skills/squads/) | Multisig |
+| Helius | [helius/](ext/sendai/skills/helius/) | RPC, webhooks, DAS |
+| DeBridge | [debridge/](ext/sendai/skills/debridge/) | Cross-chain bridging |
+| Light Protocol | [light-protocol/](ext/sendai/skills/light-protocol/) | ZK compression |
+| Solana Agent Kit | [solana-agent-kit/](ext/sendai/skills/solana-agent-kit/) | AI agent framework |
 
-### 1. Classify the task layer
-- UI/wallet/hook layer
-- Client SDK/scripts layer
-- Program layer (+ IDL)
-- Testing/CI layer
-- Backend (indexer/API)
-- Infra (RPC/deployment)
+## Security Auditing
 
-### 2. Pick the right building blocks
+From [Trail of Bits](ext/trailofbits/plugins/building-secure-contracts/skills/):
 
-| Layer | Primary Tool | Alternative |
-|-------|-------------|-------------|
-| UI + hooks | @solana/react-hooks | ConnectorKit (headless) |
-| Client SDK | @solana/kit | web3-compat adapter |
-| Programs | Anchor | Pinocchio (CU-critical) |
-| Testing | LiteSVM/Mollusk | Surfpool (integration) |
-| Backend | Axum 0.8+ | - |
+- [solana-vulnerability-scanner/](ext/trailofbits/plugins/building-secure-contracts/skills/solana-vulnerability-scanner/) — Automated Solana vulnerability detection
+- [audit-prep-assistant/](ext/trailofbits/plugins/building-secure-contracts/skills/audit-prep-assistant/) — Prepare codebase for audit
+- [code-maturity-assessor/](ext/trailofbits/plugins/building-secure-contracts/skills/code-maturity-assessor/) — Assess code maturity level
+- [token-integration-analyzer/](ext/trailofbits/plugins/building-secure-contracts/skills/token-integration-analyzer/) — Token integration analysis
+- [guidelines-advisor/](ext/trailofbits/plugins/building-secure-contracts/skills/guidelines-advisor/) — Security guidelines
 
-### 3. Implement with Solana-specific correctness
+## Infrastructure & Deployment
 
-Always be explicit about:
-- Cluster + RPC endpoints + websocket endpoints
-- Fee payer + recent blockhash
-- Compute budget + prioritization (where relevant)
-- Expected account owners + signers + writability
-- Token program variant (SPL Token vs Token-2022) and any extensions
+From [Cloudflare](ext/cloudflare/skills/):
 
-### 4. Add tests
-- Unit test: LiteSVM or Mollusk
-- Integration test: Surfpool
-- For "wallet UX", add mocked hook/provider tests where appropriate
-- Profile CU usage during development
+- [workers-best-practices/](ext/cloudflare/skills/workers-best-practices/) — Cloudflare Workers deployment
+- [agents-sdk/](ext/cloudflare/skills/agents-sdk/) — Agents SDK
+- [building-mcp-server-on-cloudflare/](ext/cloudflare/skills/building-mcp-server-on-cloudflare/) — MCP server deployment
 
-### 5. Deliverables expectations
+Local:
+- [deployment.md](deployment.md) — Devnet/mainnet workflows, verifiable builds, multisig, CI/CD
 
-When implementing changes, provide:
-- Exact files changed + diffs (or patch-style output)
-- Commands to install/build/test
-- A short "risk notes" section for anything touching signing/fees/CPIs/token transfers
+## Game Development
 
-## Progressive disclosure (read when needed)
+From [solana-game-skill](ext/solana-game/skill/):
 
-### Frontend & Client
-- [frontend-framework-kit.md](frontend-framework-kit.md) - React hooks, wallet connection, React Query, error handling, performance patterns
-- [kit-web3-interop.md](kit-web3-interop.md) - Kit ↔ web3.js boundary patterns, Anchor adapter examples
-- [idl-codegen.md](idl-codegen.md) - Codama/Shank client generation
+- [ext/solana-game/skill/SKILL.md](ext/solana-game/skill/SKILL.md) — Game skill entry point
+- [unity-sdk.md](ext/solana-game/skill/unity-sdk.md) — Solana.Unity-SDK, wallet integration, NFT loading
+- [playsolana.md](ext/solana-game/skill/playsolana.md) — PlaySolana, PSG1 console, PlayDex, PlayID
+- [game-architecture.md](ext/solana-game/skill/game-architecture.md) — On-chain game state, ECS patterns
+- [mobile.md](ext/solana-game/skill/mobile.md) — Mobile game patterns
+- [csharp-patterns.md](ext/solana-game/skill/csharp-patterns.md) — C# patterns for Solana
 
-### Programs (also check security.md)
-- [programs-anchor.md](programs-anchor.md) - Anchor patterns, testing pyramid, IDL generation, deployment
-- [programs-pinocchio.md](programs-pinocchio.md) - Zero-copy, CU optimization, TryFrom validation
+## Backend
 
-### Testing & Security
-- [testing.md](testing.md) - LiteSVM, Mollusk, Surfpool, CI guidance
-- [security.md](security.md) - Vulnerability categories, program + client checklists
+- [backend-async.md](backend-async.md) — Axum 0.8/Tokio patterns, spawn_blocking, RPC integration, Redis caching
 
-### Backend & Deployment
-- [backend-async.md](backend-async.md) - Axum 0.8/Tokio patterns, spawn_blocking, RPC integration, Redis caching
-- [deployment.md](deployment.md) - Devnet/mainnet workflows, verifiable builds, multisig, CI/CD
+## Task Routing
 
-### Ecosystem & Reference
-- [ecosystem.md](ecosystem.md) - Token standards, DeFi protocols, NFT infrastructure, data indexing
-- [payments.md](payments.md) - Commerce Kit, Kora (gasless), payment UX
-- [resources.md](resources.md) - Official documentation links
-
-### Unity & Game Development
-- [unity.md](unity.md) - Solana.Unity-SDK, wallet integration, NFT loading, transaction building in C#
-- [playsolana.md](playsolana.md) - PlaySolana ecosystem, PSG1 console, PlayDex, PlayID, SvalGuard
-
-## Task routing guide
-
-| User asks about... | Primary file(s) |
-|--------------------|-----------------|
-| Wallet connection, React hooks | frontend-framework-kit.md |
-| Transaction building, Kit types | kit-web3-interop.md |
-| Anchor program code | programs-anchor.md |
-| CU optimization, Pinocchio | programs-pinocchio.md |
-| Unit testing, CU benchmarks | testing.md |
-| Security review, audit | security.md |
+| User asks about... | Primary skill |
+|--------------------|---------------|
+| Wallet connection, React hooks | ext/solana-dev → frontend-framework-kit.md |
+| Transaction building, Kit types | ext/solana-dev → kit-web3-interop.md |
+| Anchor program code | ext/solana-dev → programs-anchor.md |
+| CU optimization, Pinocchio | ext/solana-dev → programs-pinocchio.md |
+| Unit testing, CU benchmarks | ext/solana-dev → testing.md |
+| Security review, audit | ext/solana-dev → security.md + ext/trailofbits |
 | Backend API, indexer | backend-async.md |
 | Deploy to devnet/mainnet | deployment.md |
-| DeFi integration, NFTs | ecosystem.md |
-| Payment flows, checkout | payments.md |
-| Generated clients, IDL | idl-codegen.md |
-| Unity game development | unity.md |
-| PlaySolana, PSG1 console | playsolana.md |
+| DeFi integration (swaps, lending) | ext/sendai → protocol-specific skill |
+| NFT standards, metadata | ext/sendai → metaplex/ |
+| Payment flows, checkout | ext/solana-dev → payments.md |
+| Generated clients, IDL | ext/solana-dev → idl-codegen.md |
+| Unity game development | ext/solana-game → unity-sdk.md |
+| PlaySolana, PSG1 console | ext/solana-game → playsolana.md |
+| Game architecture, ECS | ext/solana-game → game-architecture.md |
+| Workers, edge deployment | ext/cloudflare → workers-best-practices/ |
+| Token-2022, transfer hooks, extensions | token-2022.md |
+| Vulnerability scanning | ext/trailofbits → solana-vulnerability-scanner/ |
