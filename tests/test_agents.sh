@@ -17,7 +17,7 @@ for f in "$AGENTS_DIR"/*.md; do
 
   # Extract frontmatter
   if head -1 "$f" | grep -q "^---"; then
-    frontmatter="$(sed -n '/^---$/,/^---$/p' "$f" | head -20)"
+    frontmatter="$(sed -n '/^---$/,/^---$/p' "$f" | head -20 || true)"
 
     TOTAL=$((TOTAL + 1))
     if echo "$frontmatter" | grep -q "^name:"; then

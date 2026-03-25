@@ -16,7 +16,7 @@ for f in "$CMDS_DIR"/*.md; do
   COUNT=$((COUNT + 1))
 
   if head -1 "$f" | grep -q "^---"; then
-    frontmatter="$(sed -n '/^---$/,/^---$/p' "$f" | head -20)"
+    frontmatter="$(sed -n '/^---$/,/^---$/p' "$f" | head -20 || true)"
 
     TOTAL=$((TOTAL + 1))
     if echo "$frontmatter" | grep -q "^description:"; then
