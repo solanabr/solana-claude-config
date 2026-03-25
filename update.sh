@@ -4,7 +4,7 @@ set -euo pipefail
 # Solana Claude Config Updater
 # Usage: bash update.sh /path/to/project
 
-REPO_URL="https://github.com/riotavares/solana-claude-config.git"
+REPO_URL="https://github.com/solanabr/solana-claude-config.git"
 BRANCH="main"
 
 if [ $# -lt 1 ]; then

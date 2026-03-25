@@ -4,10 +4,10 @@
 
 ```bash
 # Option 1: One-liner installer (recommended)
-curl -fsSL https://raw.githubusercontent.com/riotavares/solana-claude-config/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/solanabr/solana-claude-config/main/install.sh | bash
 
 # Option 2: Manual setup
-git clone --recurse-submodules https://github.com/riotavares/solana-claude-config.git
+git clone --recurse-submodules https://github.com/solanabr/solana-claude-config.git
 cp -r solana-claude-config/.claude /path/to/your-project/
 cp solana-claude-config/CLAUDE-solana.md /path/to/your-project/CLAUDE.md
 cd /path/to/your-project && git submodule update --init --recursive

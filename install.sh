@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Solana Claude Config Installer
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/riotavares/solana-claude-config/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/solanabr/solana-claude-config/main/install.sh | bash
 #   bash install.sh /path/to/project
 
-REPO_URL="https://github.com/riotavares/solana-claude-config.git"
+REPO_URL="https://github.com/solanabr/solana-claude-config.git"
 BRANCH="main"
 
 TARGET_DIR="${1:-.}"
