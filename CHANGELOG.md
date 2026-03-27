@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-26
+
+### Added
+- **External Skill**: Colosseum Copilot (startup research, idea validation, hackathon projects) as submodule at `ext/colosseum/`
+- Ideation & Research section in SKILL.md skill hub
+- Colosseum references in solana-researcher and solana-architect agents
+
+## [1.1.0] - 2026-03-25
+
+### Added
+- **External Skill**: QEDGen formal verification (Lean 4 theorem proving) as submodule at `ext/qedgen/`
+- Formal verification section in SKILL.md skill hub
+- QEDGen references in solana-qa-engineer and solana-architect agents
+
 ## [1.0.0] - 2026-03-24
 
 ### Added
