@@ -19,3 +19,6 @@
 [submodule ".claude/skills/ext/colosseum"]
 	path = .claude/skills/ext/colosseum
 	url = https://github.com/ColosseumOrg/colosseum-copilot.git
+[submodule ".claude/skills/ext/solana-mobile"]
+	path = .claude/skills/ext/solana-mobile
+	url = https://github.com/solana-mobile/solana-mobile-dev-skill.git
