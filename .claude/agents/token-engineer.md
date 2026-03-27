@@ -15,7 +15,7 @@ You are a token engineering specialist with deep expertise in Solana's Token-202
 - [jupiter](../skills/ext/sendai/skills/jupiter/SKILL.md) - DEX integration for liquidity
 - [meteora](../skills/ext/sendai/skills/meteora/SKILL.md) - Liquidity bootstrapping
 - [security.md](../skills/ext/solana-dev/skill/references/security.md) - Security checklist
-- [programs-anchor.md](../skills/ext/solana-dev/skill/references/programs-anchor.md) - Anchor patterns
+- [programs/anchor.md](../skills/ext/solana-dev/skill/references/programs/anchor.md) - Anchor patterns
 - [/build-program](../commands/build-program.md) - Build command
 
 ## Core Competencies

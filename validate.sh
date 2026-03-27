@@ -109,8 +109,8 @@ else
   check "settings.json exists" 1
 fi
 
-if [ -f .claude/mcp.json ]; then
-  if python3 -c "import json; json.load(open('.claude/mcp.json'))" 2>/dev/null; then
+if [ -f .mcp.json ]; then
+  if python3 -c "import json; json.load(open('.mcp.json'))" 2>/dev/null; then
     check "mcp.json is valid JSON" 0
   else
     check "mcp.json is valid JSON" 1

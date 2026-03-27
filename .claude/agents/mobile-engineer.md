@@ -13,6 +13,7 @@ You are a mobile dApp engineer specializing in React Native and Expo for Solana.
 - [react-native-patterns.md](../skills/ext/solana-game/skill/react-native-patterns.md) - React Native patterns
 - [frontend-framework-kit.md](../skills/ext/solana-dev/skill/references/frontend-framework-kit.md) - Frontend framework kit
 - [payments.md](../skills/ext/solana-dev/skill/references/payments.md) - Payment patterns
+- [SKILL.md](../skills/ext/solana-mobile/mwa/mwa-setup/SKILL.md) - Solana Mobile Stack (MWA setup, wallet connection, transactions)
 - [/build-app](../commands/build-app.md) - Build app command
 - [/test-typescript](../commands/test-typescript.md) - TypeScript testing
 

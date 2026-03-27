@@ -7,6 +7,8 @@ description: Comprehensive guide to SPL Token-2022 (Token Extensions) — transf
 
 SPL Token-2022 is the next-generation token program (`TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`). Superset of SPL Token with extensions that add functionality at the mint or account level.
 
+> **See also:** For in-depth confidential transfer (ZK) implementation, see [ext/solana-dev/skill/references/confidential-transfers.md](ext/solana-dev/skill/references/confidential-transfers.md). For Kit-specific Token-2022 client patterns, see [ext/solana-dev/skill/references/kit/programs/token-2022.md](ext/solana-dev/skill/references/kit/programs/token-2022.md).
+
 **Program IDs:**
 - Token-2022: `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`
 - SPL Token (legacy): `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`

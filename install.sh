@@ -5,9 +5,19 @@ set -euo pipefail
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/solanabr/solana-claude-config/main/install.sh | bash
 #   bash install.sh /path/to/project
+#   bash install.sh --agents /path/to/project   # Use .agents/ for Cursor/Windsurf
 
 REPO_URL="https://github.com/solanabr/solana-claude-config.git"
 BRANCH="main"
+
+# Parse flags
+DEST_DIR=".claude"
+while [[ "${1:-}" == --* ]]; do
+  case "$1" in
+    --agents) DEST_DIR=".agents"; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
 
 TARGET_DIR="${1:-.}"
 mkdir -p "$TARGET_DIR"
@@ -24,6 +34,8 @@ if [ -n "${SOLANA_CLAUDE_LOCAL_SRC:-}" ] && [ -d "$SOLANA_CLAUDE_LOCAL_SRC/.clau
   mkdir -p "$TEMP_DIR/repo"
   cp -r "$SOLANA_CLAUDE_LOCAL_SRC/.claude" "$TEMP_DIR/repo/.claude"
   cp "$SOLANA_CLAUDE_LOCAL_SRC/CLAUDE-solana.md" "$TEMP_DIR/repo/CLAUDE-solana.md"
+  [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.mcp.json" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.mcp.json" "$TEMP_DIR/repo/.mcp.json"
+  [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.env.example" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.env.example" "$TEMP_DIR/repo/.env.example"
   [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.gitmodules" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.gitmodules" "$TEMP_DIR/repo/.gitmodules"
 else
   # Clone repo with submodules
@@ -32,11 +44,15 @@ else
 fi
 
 # Copy .claude/ directory
-echo "Copying .claude/ configuration..."
-if [ -d "$TARGET_DIR/.claude" ]; then
-  echo "Warning: .claude/ already exists, merging..."
+echo "Copying $DEST_DIR/ configuration..."
+if [ -d "$TARGET_DIR/$DEST_DIR" ]; then
+  echo "Warning: $DEST_DIR/ already exists, merging..."
 fi
-cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
+if [ "$DEST_DIR" = ".claude" ]; then
+  cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
+else
+  cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/$DEST_DIR"
+fi
 
 # Copy CLAUDE-solana.md as CLAUDE.md
 echo "Copying CLAUDE.md..."
@@ -46,18 +62,38 @@ if [ -f "$TARGET_DIR/CLAUDE.md" ]; then
 fi
 cp "$TEMP_DIR/repo/CLAUDE-solana.md" "$TARGET_DIR/CLAUDE.md"
 
+# Copy .mcp.json to project root
+if [ -f "$TEMP_DIR/repo/.mcp.json" ]; then
+  echo "Copying .mcp.json..."
+  cp "$TEMP_DIR/repo/.mcp.json" "$TARGET_DIR/.mcp.json"
+fi
+
+# Copy .env.example and bootstrap .env if it doesn't exist
+if [ -f "$TEMP_DIR/repo/.env.example" ]; then
+  echo "Copying .env.example..."
+  cp "$TEMP_DIR/repo/.env.example" "$TARGET_DIR/.env.example"
+  if [ ! -f "$TARGET_DIR/.env" ]; then
+    cp "$TARGET_DIR/.env.example" "$TARGET_DIR/.env"
+    echo "Created .env from .env.example (gitignored — add your API keys here)"
+  fi
+fi
+
 # Copy .gitmodules if it exists
 if [ -f "$TEMP_DIR/repo/.gitmodules" ]; then
   cp "$TEMP_DIR/repo/.gitmodules" "$TARGET_DIR/.gitmodules"
 fi
 
 # Initialize submodules in target
-echo "Initializing submodules..."
-(cd "$TARGET_DIR" && git submodule update --init --recursive 2>/dev/null) || echo "Note: Submodule init skipped (not a git repo or submodules already set up)"
+if [ "$DEST_DIR" = ".claude" ]; then
+  echo "Initializing submodules..."
+  (cd "$TARGET_DIR" && git submodule update --init --recursive 2>/dev/null) || echo "Note: Submodule init skipped (not a git repo or submodules already set up)"
+else
+  echo "Note: Submodules not initialized in --agents mode. ext/ skills included as static copies."
+fi
 
 # Add .claude/skills/ext/ to .gitignore if not present
 GITIGNORE="$TARGET_DIR/.gitignore"
-EXT_PATTERN=".claude/skills/ext/"
+EXT_PATTERN="$DEST_DIR/skills/ext/"
 if [ -f "$GITIGNORE" ]; then
   if ! grep -qF "$EXT_PATTERN" "$GITIGNORE"; then
     echo "" >> "$GITIGNORE"
@@ -76,6 +112,6 @@ echo "Installation complete!"
 echo ""
 echo "Next steps:"
 echo "  1. cd $TARGET_DIR"
-echo "  2. Review .claude/mcp.json and add your API keys"
+echo "  2. Edit .env with your API keys (Helius, RPC, etc.)"
 echo "  3. Run 'claude' to start Claude Code with Solana config"
 echo "  4. Try /build-program or /audit-solana commands"

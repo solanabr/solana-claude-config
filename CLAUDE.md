@@ -36,6 +36,8 @@ You are maintaining the **solana-claude-config** repository - a template/library
 ├── README.md              # Documentation for users
 ├── QUICK-START.md         # Quick start guide
 ├── CHANGELOG.md           # Version history
+├── .mcp.json              # MCP server config (${VAR} expansion, no secrets)
+├── .env.example           # Env var template for MCP credentials
 ├── install.sh             # One-liner installer script
 ├── update.sh              # Config updater script
 ├── validate.sh            # Config integrity checker
@@ -74,11 +76,11 @@ You are maintaining the **solana-claude-config** repository - a template/library
     │   │   ├── cloudflare/        # cloudflare/skills
     │   │   ├── trailofbits/       # trailofbits/skills (security)
     │   │   ├── qedgen/            # QEDGen/solana-skills (formal verification)
-    │   │   └── colosseum/         # ColosseumOrg/colosseum-copilot (startup research)
+    │   │   ├── colosseum/         # ColosseumOrg/colosseum-copilot (startup research)
+    │   │   └── solana-mobile/     # solana-mobile/solana-mobile-dev-skill
     │   ├── token-2022.md      # Local: Token Extensions guide
     │   ├── backend-async.md   # Local: Axum/Tokio patterns
     │   └── deployment.md      # Local: Deployment workflows
-    ├── mcp.json           # MCP server configurations (Helius, Context7, Puppeteer, etc.)
     ├── rules/             # Auto-loading constraint files
     └── settings.json      # Permissions, hooks, agent teams
 ```
@@ -108,7 +110,7 @@ You are maintaining the **solana-claude-config** repository - a template/library
 - Keep rules minimal - they load on every matching file
 - Use `globs` in frontmatter to specify patterns
 
-### Adding/Modifying MCP Servers (`.claude/mcp.json`)
+### Adding/Modifying MCP Servers (`.mcp.json`)
 - Each server needs clear env var documentation
 - Test connectivity before committing
 - Document required API keys in setup-mcp command
@@ -178,4 +180,4 @@ bash tests/run_all.sh
 
 ---
 
-**Main config**: `CLAUDE-solana.md` | **Agents**: `.claude/agents/` | **Skills**: `.claude/skills/` | **Commands**: `.claude/commands/` | **MCP**: `.claude/mcp.json` | **Rules**: `.claude/rules/`
+**Main config**: `CLAUDE-solana.md` | **Agents**: `.claude/agents/` | **Skills**: `.claude/skills/` | **Commands**: `.claude/commands/` | **MCP**: `.mcp.json` | **Rules**: `.claude/rules/`

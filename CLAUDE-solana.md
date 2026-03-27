@@ -47,10 +47,12 @@ Every program change:
 
 ## MCP Servers
 
-MCP servers are configured in `.claude/mcp.json`. Available servers:
+MCP servers are configured in `.mcp.json` (project root). Available servers:
 - **Helius** — 60+ tools: RPC, DAS API, webhooks, priority fees, token metadata
 - **Context7** — Up-to-date library documentation lookup
 - **Puppeteer** — Browser automation for dApp testing
+
+Credentials use `${VAR}` expansion — set values in `.env` (gitignored), not in `.mcp.json`.
 
 Run `/setup-mcp` to configure API keys and verify connections.
 
@@ -114,4 +116,4 @@ git diff main...HEAD
 
 ---
 
-**Skills**: `.claude/skills/SKILL.md` | **Rules**: `.claude/rules/` | **Commands**: `.claude/commands/` | **Agents**: `.claude/agents/` | **MCP**: `.claude/mcp.json`
+**Skills**: `.claude/skills/SKILL.md` | **Rules**: `.claude/rules/` | **Commands**: `.claude/commands/` | **Agents**: `.claude/agents/` | **MCP**: `.mcp.json`

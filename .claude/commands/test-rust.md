@@ -8,8 +8,8 @@ You are running Rust tests. This command covers Solana program testing (Mollusk,
 
 - [testing.md](../skills/testing.md) - Testing strategy details
 - [security.md](../skills/security.md) - Security testing checklist
-- [programs-anchor.md](../skills/programs-anchor.md) - Anchor test patterns
-- [programs-pinocchio.md](../skills/programs-pinocchio.md) - Pinocchio test patterns
+- [programs/anchor.md](../skills/ext/solana-dev/skill/references/programs/anchor.md) - Anchor test patterns
+- [programs/pinocchio.md](../skills/ext/solana-dev/skill/references/programs/pinocchio.md) - Pinocchio test patterns
 
 ## Step 1: Identify Project Type
 

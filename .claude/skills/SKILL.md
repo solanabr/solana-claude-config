@@ -15,8 +15,8 @@ Routes to the right skill file based on the task. Read the relevant section, fol
 - [ext/solana-dev/skill/SKILL.md](ext/solana-dev/skill/SKILL.md) — Solana Foundation skill (framework-kit-first, Kit types, wallet-standard)
 
 Key references within:
-- [programs-anchor.md](ext/solana-dev/skill/references/programs-anchor.md) — Anchor patterns, IDL, constraints
-- [programs-pinocchio.md](ext/solana-dev/skill/references/programs-pinocchio.md) — Zero-copy, CU optimization
+- [programs/anchor.md](ext/solana-dev/skill/references/programs/anchor.md) — Anchor patterns, IDL, constraints
+- [programs/pinocchio.md](ext/solana-dev/skill/references/programs/pinocchio.md) — Zero-copy, CU optimization
 - [frontend-framework-kit.md](ext/solana-dev/skill/references/frontend-framework-kit.md) — React hooks, wallet connection, @solana/kit UI
 - [kit-web3-interop.md](ext/solana-dev/skill/references/kit-web3-interop.md) — Kit ↔ web3.js boundary patterns
 - [testing.md](ext/solana-dev/skill/references/testing.md) — LiteSVM, Mollusk, Surfpool, CI
@@ -24,6 +24,10 @@ Key references within:
 - [idl-codegen.md](ext/solana-dev/skill/references/idl-codegen.md) — Codama/Shank client generation
 - [payments.md](ext/solana-dev/skill/references/payments.md) — Commerce Kit, Kora, Solana Pay
 - [resources.md](ext/solana-dev/skill/references/resources.md) — Official documentation links
+- [common-errors.md](ext/solana-dev/skill/references/common-errors.md) — GLIBC errors, Anchor version conflicts, RPC errors, dependency fixes
+- [compatibility-matrix.md](ext/solana-dev/skill/references/compatibility-matrix.md) — Anchor/Solana CLI/Rust/Node.js version matching
+- [surfpool/overview.md](ext/solana-dev/skill/references/surfpool/overview.md) — Surfpool local network
+- [surfpool/cheatcodes.md](ext/solana-dev/skill/references/surfpool/cheatcodes.md) — Surfpool cheatcodes reference
 
 ## Token Extensions
 
@@ -91,6 +95,17 @@ From [solana-game-skill](ext/solana-game/skill/):
 - [mobile.md](ext/solana-game/skill/mobile.md) — Mobile game patterns
 - [csharp-patterns.md](ext/solana-game/skill/csharp-patterns.md) — C# patterns for Solana
 
+## Mobile Development
+
+From [Solana Mobile](ext/solana-mobile/):
+
+- [ext/solana-mobile/README.md](ext/solana-mobile/README.md) — Solana Mobile Stack overview
+- [ext/solana-mobile/mwa/mwa-setup/SKILL.md](ext/solana-mobile/mwa/mwa-setup/SKILL.md) — Mobile Wallet Adapter setup
+- [ext/solana-mobile/mwa/mwa-connection/SKILL.md](ext/solana-mobile/mwa/mwa-connection/SKILL.md) — MWA wallet connection
+- [ext/solana-mobile/mwa/mwa-transactions/SKILL.md](ext/solana-mobile/mwa/mwa-transactions/SKILL.md) — MWA transaction signing
+- [ext/solana-mobile/genesis-token/SKILL.md](ext/solana-mobile/genesis-token/SKILL.md) — Saga Genesis Token
+- [ext/solana-mobile/skr-address-resolution/SKILL.md](ext/solana-mobile/skr-address-resolution/SKILL.md) — SKR address resolution
+
 ## Ideation & Research
 
 From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
@@ -107,8 +122,8 @@ From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
 |--------------------|---------------|
 | Wallet connection, React hooks | ext/solana-dev → frontend-framework-kit.md |
 | Transaction building, Kit types | ext/solana-dev → kit-web3-interop.md |
-| Anchor program code | ext/solana-dev → programs-anchor.md |
-| CU optimization, Pinocchio | ext/solana-dev → programs-pinocchio.md |
+| Anchor program code | ext/solana-dev → programs/anchor.md |
+| CU optimization, Pinocchio | ext/solana-dev → programs/pinocchio.md |
 | Unit testing, CU benchmarks | ext/solana-dev → testing.md |
 | Security review, audit | ext/solana-dev → security.md + ext/trailofbits |
 | Backend API, indexer | backend-async.md |
@@ -124,4 +139,8 @@ From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
 | Token-2022, transfer hooks, extensions | token-2022.md |
 | Vulnerability scanning | ext/trailofbits → solana-vulnerability-scanner/ |
 | Formal verification, proofs | ext/qedgen → SKILL.md |
+| Mobile wallet adapter, Saga, dApp Store | ext/solana-mobile → mwa/, genesis-token/ |
+| Toolchain errors, GLIBC, version conflicts | ext/solana-dev → common-errors.md |
+| Version compatibility, Anchor/CLI versions | ext/solana-dev → compatibility-matrix.md |
+| Surfpool local network, cheatcodes | ext/solana-dev → surfpool/ |
 | Idea validation, competitive research, hackathon projects | ext/colosseum → colosseum-copilot/SKILL.md |
