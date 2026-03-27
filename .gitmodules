@@ -1,21 +1,21 @@
-[submodule ".claude/skills/ext/solana-dev"]
-	path = .claude/skills/ext/solana-dev
-	url = https://github.com/solana-foundation/solana-dev-skill.git
-[submodule ".claude/skills/ext/sendai"]
-	path = .claude/skills/ext/sendai
-	url = https://github.com/sendaifun/skills.git
-[submodule ".claude/skills/ext/solana-game"]
-	path = .claude/skills/ext/solana-game
-	url = https://github.com/solanabr/solana-game-skill.git
-[submodule ".claude/skills/ext/cloudflare"]
-	path = .claude/skills/ext/cloudflare
-	url = https://github.com/cloudflare/skills.git
-[submodule ".claude/skills/ext/trailofbits"]
-	path = .claude/skills/ext/trailofbits
-	url = https://github.com/trailofbits/skills.git
 [submodule ".claude/skills/ext/qedgen"]
 	path = .claude/skills/ext/qedgen
 	url = https://github.com/QEDGen/solana-skills.git
 [submodule ".claude/skills/ext/colosseum"]
 	path = .claude/skills/ext/colosseum
 	url = https://github.com/ColosseumOrg/colosseum-copilot.git
+[submodule ".claude/skills/ext/cloudflare"]
+	path = .claude/skills/ext/cloudflare
+	url = https://github.com/cloudflare/skills.git
+[submodule ".claude/skills/ext/sendai"]
+	path = .claude/skills/ext/sendai
+	url = https://github.com/sendaifun/skills.git
+[submodule ".claude/skills/ext/solana-dev"]
+	path = .claude/skills/ext/solana-dev
+	url = https://github.com/solana-foundation/solana-dev-skill.git
+[submodule ".claude/skills/ext/solana-game"]
+	path = .claude/skills/ext/solana-game
+	url = https://github.com/solanabr/solana-game-skill.git
+[submodule ".claude/skills/ext/trailofbits"]
+	path = .claude/skills/ext/trailofbits
+	url = https://github.com/trailofbits/skills.git
