@@ -5,9 +5,19 @@ set -euo pipefail
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/solanabr/solana-claude-config/main/install.sh | bash
 #   bash install.sh /path/to/project
+#   bash install.sh --agents /path/to/project   # Use .agents/ for Cursor/Windsurf
 
 REPO_URL="https://github.com/solanabr/solana-claude-config.git"
 BRANCH="main"
+
+# Parse flags
+DEST_DIR=".claude"
+while [[ "${1:-}" == --* ]]; do
+  case "$1" in
+    --agents) DEST_DIR=".agents"; shift ;;
+    *) echo "Unknown flag: $1" >&2; exit 1 ;;
+  esac
+done
 
 TARGET_DIR="${1:-.}"
 mkdir -p "$TARGET_DIR"
@@ -32,11 +42,15 @@ else
 fi
 
 # Copy .claude/ directory
-echo "Copying .claude/ configuration..."
-if [ -d "$TARGET_DIR/.claude" ]; then
-  echo "Warning: .claude/ already exists, merging..."
+echo "Copying $DEST_DIR/ configuration..."
+if [ -d "$TARGET_DIR/$DEST_DIR" ]; then
+  echo "Warning: $DEST_DIR/ already exists, merging..."
 fi
-cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
+if [ "$DEST_DIR" = ".claude" ]; then
+  cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
+else
+  cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/$DEST_DIR"
+fi
 
 # Copy CLAUDE-solana.md as CLAUDE.md
 echo "Copying CLAUDE.md..."
@@ -52,12 +66,16 @@ if [ -f "$TEMP_DIR/repo/.gitmodules" ]; then
 fi
 
 # Initialize submodules in target
-echo "Initializing submodules..."
-(cd "$TARGET_DIR" && git submodule update --init --recursive 2>/dev/null) || echo "Note: Submodule init skipped (not a git repo or submodules already set up)"
+if [ "$DEST_DIR" = ".claude" ]; then
+  echo "Initializing submodules..."
+  (cd "$TARGET_DIR" && git submodule update --init --recursive 2>/dev/null) || echo "Note: Submodule init skipped (not a git repo or submodules already set up)"
+else
+  echo "Note: Submodules not initialized in --agents mode. ext/ skills included as static copies."
+fi
 
 # Add .claude/skills/ext/ to .gitignore if not present
 GITIGNORE="$TARGET_DIR/.gitignore"
-EXT_PATTERN=".claude/skills/ext/"
+EXT_PATTERN="$DEST_DIR/skills/ext/"
 if [ -f "$GITIGNORE" ]; then
   if ! grep -qF "$EXT_PATTERN" "$GITIGNORE"; then
     echo "" >> "$GITIGNORE"
@@ -76,6 +94,6 @@ echo "Installation complete!"
 echo ""
 echo "Next steps:"
 echo "  1. cd $TARGET_DIR"
-echo "  2. Review .claude/mcp.json and add your API keys"
+echo "  2. Review $DEST_DIR/mcp.json and add your API keys"
 echo "  3. Run 'claude' to start Claude Code with Solana config"
 echo "  4. Try /build-program or /audit-solana commands"
