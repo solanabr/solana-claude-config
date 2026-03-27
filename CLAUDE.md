@@ -72,7 +72,9 @@ You are maintaining the **solana-claude-config** repository - a template/library
     │   │   ├── sendai/            # sendaifun/skills (DeFi protocols)
     │   │   ├── solana-game/       # solanabr/solana-game-skill
     │   │   ├── cloudflare/        # cloudflare/skills
-    │   │   └── trailofbits/       # trailofbits/skills (security)
+    │   │   ├── trailofbits/       # trailofbits/skills (security)
+    │   │   ├── qedgen/            # QEDGen/solana-skills (formal verification)
+    │   │   └── colosseum/         # ColosseumOrg/colosseum-copilot (startup research)
     │   ├── token-2022.md      # Local: Token Extensions guide
     │   ├── backend-async.md   # Local: Axum/Tokio patterns
     │   └── deployment.md      # Local: Deployment workflows

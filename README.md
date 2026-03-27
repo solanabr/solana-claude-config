@@ -137,7 +137,9 @@ Pre-configured MCP servers in `.claude/mcp.json`:
     │   │   ├── sendai/                  # SendAI protocol skills (DeFi)
     │   │   ├── solana-game/             # Solana game skill (Unity, PSG1)
     │   │   ├── cloudflare/              # Cloudflare Workers, Agents SDK
-    │   │   └── trailofbits/             # Trail of Bits security skills
+    │   │   ├── trailofbits/             # Trail of Bits security skills
+    │   │   ├── qedgen/                # QEDGen formal verification (Lean 4)
+    │   │   └── colosseum/              # Colosseum Copilot (startup research)
     │   ├── token-2022.md            # Token Extensions guide (local)
     │   ├── backend-async.md         # Axum/Tokio patterns (local)
     │   └── deployment.md            # Deployment workflows (local)
@@ -233,6 +235,8 @@ This config includes a pre-built GitHub Action (`.github/workflows/claude-code.y
 | `ext/solana-game` | [solanabr/solana-game-skill](https://github.com/solanabr/solana-game-skill) | Game development (Unity, PlaySolana, PSG1) |
 | `ext/cloudflare` | [cloudflare/skills](https://github.com/cloudflare/skills) | Infrastructure (Workers, Agents SDK, MCP servers) |
 | `ext/trailofbits` | [trailofbits/skills](https://github.com/trailofbits/skills) | Security auditing and vulnerability scanning |
+| `ext/qedgen` | [QEDGen/solana-skills](https://github.com/QEDGen/solana-skills) | Formal verification with Lean 4 theorem proving |
+| `ext/colosseum` | [ColosseumOrg/colosseum-copilot](https://github.com/ColosseumOrg/colosseum-copilot) | Startup research, idea validation, hackathon projects (proprietary license) |
 
 ## Branch Workflow
 
@@ -281,6 +285,10 @@ This project builds on excellent work from the community:
 - **[trailofbits/skills](https://github.com/trailofbits/skills)** - Trail of Bits security auditing skills.
 
 - **[cloudflare/skills](https://github.com/cloudflare/skills)** - Cloudflare infrastructure skills.
+
+- **[QEDGen/solana-skills](https://github.com/QEDGen/solana-skills)** - Formal verification for Solana programs using Lean 4 theorem proving.
+
+- **[ColosseumOrg/colosseum-copilot](https://github.com/ColosseumOrg/colosseum-copilot)** - Solana startup research, idea validation, and hackathon project discovery from Colosseum. Proprietary license (Copyright Colosseum).
 
 - **[0xquinto/bcherny-claude](https://github.com/0xquinto/bcherny-claude)** - Compiled Boris Cherny's (creator of Claude Code at Anthropic) best practices including verification loops, parallel Claude sessions, and CLAUDE.md patterns.
 

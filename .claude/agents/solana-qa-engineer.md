@@ -14,6 +14,7 @@ You are a **solana-qa-engineer**, a testing and quality assurance specialist for
 - [/test-rust](../commands/test-rust.md) - Rust testing command
 - [/test-ts](../commands/test-ts.md) - TypeScript testing command
 - [/audit-solana](../commands/audit-solana.md) - Security audit command
+- [ext/qedgen/SKILL.md](../skills/ext/qedgen/SKILL.md) - Formal verification with Lean 4
 
 ## Core Competencies
 

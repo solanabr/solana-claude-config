@@ -13,3 +13,9 @@
 [submodule ".claude/skills/ext/trailofbits"]
 	path = .claude/skills/ext/trailofbits
 	url = https://github.com/trailofbits/skills.git
+[submodule ".claude/skills/ext/qedgen"]
+	path = .claude/skills/ext/qedgen
+	url = https://github.com/QEDGen/solana-skills.git
+[submodule ".claude/skills/ext/colosseum"]
+	path = .claude/skills/ext/colosseum
+	url = https://github.com/ColosseumOrg/colosseum-copilot.git

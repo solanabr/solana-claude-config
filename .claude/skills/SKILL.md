@@ -1,6 +1,6 @@
 ---
 name: solana-dev
-description: Unified skill hub for Solana development. Routes to external submodule skills (solana-foundation, sendai, solana-game, trailofbits, cloudflare) and local skills. Progressive disclosure — read only what you need.
+description: Unified skill hub for Solana development. Routes to external submodule skills (solana-foundation, sendai, solana-game, trailofbits, cloudflare, qedgen, colosseum) and local skills. Progressive disclosure — read only what you need.
 user-invocable: true
 ---
 
@@ -63,6 +63,12 @@ From [Trail of Bits](ext/trailofbits/plugins/building-secure-contracts/skills/):
 - [token-integration-analyzer/](ext/trailofbits/plugins/building-secure-contracts/skills/token-integration-analyzer/) — Token integration analysis
 - [guidelines-advisor/](ext/trailofbits/plugins/building-secure-contracts/skills/guidelines-advisor/) — Security guidelines
 
+## Formal Verification
+
+From [QEDGen](ext/qedgen/):
+
+- [ext/qedgen/SKILL.md](ext/qedgen/SKILL.md) — Formal verification for Solana programs using Lean 4 theorem proving (Leanstral). Verifies access control, CPI correctness, state machines, arithmetic safety. Requires `qedgen` CLI and `MISTRAL_API_KEY`.
+
 ## Infrastructure & Deployment
 
 From [Cloudflare](ext/cloudflare/skills/):
@@ -84,6 +90,12 @@ From [solana-game-skill](ext/solana-game/skill/):
 - [game-architecture.md](ext/solana-game/skill/game-architecture.md) — On-chain game state, ECS patterns
 - [mobile.md](ext/solana-game/skill/mobile.md) — Mobile game patterns
 - [csharp-patterns.md](ext/solana-game/skill/csharp-patterns.md) — C# patterns for Solana
+
+## Ideation & Research
+
+From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
+
+- [ext/colosseum/skills/colosseum-copilot/SKILL.md](ext/colosseum/skills/colosseum-copilot/SKILL.md) — Solana startup research: idea validation, competitive analysis, hackathon project discovery (5,400+ submissions), crypto archives, and The Grid ecosystem data. Requires `COLOSSEUM_COPILOT_PAT`.
 
 ## Backend
 
@@ -111,3 +123,5 @@ From [solana-game-skill](ext/solana-game/skill/):
 | Workers, edge deployment | ext/cloudflare → workers-best-practices/ |
 | Token-2022, transfer hooks, extensions | token-2022.md |
 | Vulnerability scanning | ext/trailofbits → solana-vulnerability-scanner/ |
+| Formal verification, proofs | ext/qedgen → SKILL.md |
+| Idea validation, competitive research, hackathon projects | ext/colosseum → colosseum-copilot/SKILL.md |

@@ -13,6 +13,7 @@ You are the **solana-architect**, a senior Solana program architect specializing
 - [programs-pinocchio.md](../skills/ext/solana-dev/skill/references/programs-pinocchio.md) - Pinocchio implementation details
 - [security.md](../skills/ext/solana-dev/skill/references/security.md) - Security checklist and audit patterns
 - [deployment.md](../skills/deployment.md) - Deployment strategies
+- [colosseum-copilot/SKILL.md](../skills/ext/colosseum/skills/colosseum-copilot/SKILL.md) - Idea validation & competitive landscape (Colosseum)
 - [/audit-solana](../commands/audit-solana.md) - Security audit command
 
 ## When to Use This Agent
@@ -399,6 +400,8 @@ Benefits: Trustless, no custodian
 | **Flash Loan Attack** | Same-slot checks, TWAPs for prices |
 | **Sandwich Attack** | Slippage protection, MEV-aware design |
 | **Price Oracle Manipulation** | Multiple oracles, staleness checks, confidence intervals |
+
+For programs managing significant value, consider formal verification with [QEDGen](../skills/ext/qedgen/SKILL.md) to mathematically prove access control, state machine, and arithmetic invariants.
 
 > **Full security checklist**: See [security.md](../skills/ext/solana-dev/skill/references/security.md)
 
