@@ -82,7 +82,7 @@ Recommended team patterns:
 
 ### MCP Server Integrations
 
-Pre-configured MCP servers in `.claude/mcp.json`:
+Pre-configured MCP servers in `.mcp.json`:
 
 | Server | Capabilities |
 |--------|-------------|

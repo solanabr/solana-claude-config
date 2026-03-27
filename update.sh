@@ -31,6 +31,8 @@ if [ -n "${SOLANA_CLAUDE_LOCAL_SRC:-}" ] && [ -d "$SOLANA_CLAUDE_LOCAL_SRC/.clau
   mkdir -p "$TEMP_DIR/repo"
   cp -r "$SOLANA_CLAUDE_LOCAL_SRC/.claude" "$TEMP_DIR/repo/.claude"
   cp "$SOLANA_CLAUDE_LOCAL_SRC/CLAUDE-solana.md" "$TEMP_DIR/repo/CLAUDE-solana.md"
+  [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.mcp.json" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.mcp.json" "$TEMP_DIR/repo/.mcp.json"
+  [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.env.example" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.env.example" "$TEMP_DIR/repo/.env.example"
   [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.gitmodules" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.gitmodules" "$TEMP_DIR/repo/.gitmodules"
 else
   # Clone latest
@@ -39,14 +41,6 @@ else
 
   # Update submodules in temp
   (cd "$TEMP_DIR/repo" && git submodule update --init --recursive 2>/dev/null) || true
-fi
-
-# Preserve local mcp.json if it exists
-MCP_BACKUP=""
-if [ -f "$TARGET_DIR/.claude/mcp.json" ]; then
-  MCP_BACKUP="$TEMP_DIR/mcp.json.bak"
-  cp "$TARGET_DIR/.claude/mcp.json" "$MCP_BACKUP"
-  echo "Preserved local mcp.json"
 fi
 
 # Track what changed
@@ -59,9 +53,20 @@ fi
 
 cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
 
-# Restore local mcp.json
-if [ -n "$MCP_BACKUP" ]; then
-  cp "$MCP_BACKUP" "$TARGET_DIR/.claude/mcp.json"
+# Copy .mcp.json (no secrets — safe to overwrite)
+if [ -f "$TEMP_DIR/repo/.mcp.json" ]; then
+  if ! diff -q "$TEMP_DIR/repo/.mcp.json" "$TARGET_DIR/.mcp.json" >/dev/null 2>&1; then
+    CHANGES="$CHANGES  - .mcp.json updated\n"
+  fi
+  cp "$TEMP_DIR/repo/.mcp.json" "$TARGET_DIR/.mcp.json"
+fi
+
+# Copy .env.example (update template, never touch .env)
+if [ -f "$TEMP_DIR/repo/.env.example" ]; then
+  if ! diff -q "$TEMP_DIR/repo/.env.example" "$TARGET_DIR/.env.example" >/dev/null 2>&1; then
+    CHANGES="$CHANGES  - .env.example updated\n"
+  fi
+  cp "$TEMP_DIR/repo/.env.example" "$TARGET_DIR/.env.example"
 fi
 
 # Compare and copy CLAUDE.md

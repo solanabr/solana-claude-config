@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-03-24
 
 ### Added
-- **MCP Servers**: Helius, Solana Agent Kit, Solana native, Context7, Puppeteer configurations in `.claude/mcp.json`
+- **MCP Servers**: Helius, Solana Agent Kit, Solana native, Context7, Puppeteer configurations in `.mcp.json` with `${VAR}` credential expansion
 - **New Agents** (4): defi-engineer, mobile-engineer, devops-engineer, token-engineer — total now 15
 - **New Commands** (8): /setup-mcp, /update-skills, /profile-cu, /migrate-web3, /scaffold, /diff-review, /benchmark, /generate-idl-client — total now 22
 - **New Skill**: token-2022.md — comprehensive Token Extensions guide covering all 12+ extension types

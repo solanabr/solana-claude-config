@@ -4,26 +4,58 @@ description: "Interactive MCP server setup wizard — configure API keys and ver
 
 You are guiding the user through MCP server configuration for their Solana project.
 
-## Step 1: Check Configuration File
+## Step 1: Check Configuration Files
 
-Check if `.claude/mcp.json` exists in the project root. If not, inform the user they need to copy it from solana-claude-config:
+Check if `.mcp.json` exists at the project root. If not, inform the user they need to run `install.sh`:
 
 ```bash
-if [ -f ".claude/mcp.json" ]; then
-    echo "Found .claude/mcp.json"
-    cat .claude/mcp.json
+if [ -f ".mcp.json" ]; then
+    echo "Found .mcp.json"
+    cat .mcp.json
 else
-    echo "ERROR: .claude/mcp.json not found."
-    echo "Copy it from solana-claude-config:"
-    echo "  cp -r solana-claude-config/.claude/mcp.json .claude/mcp.json"
+    echo "ERROR: .mcp.json not found."
+    echo "Run the installer: curl -fsSL https://raw.githubusercontent.com/solanabr/solana-claude-config/main/install.sh | bash"
 fi
 ```
 
-## Step 2: Configure Each Server
+Check if `.env` exists. If not, create it from `.env.example`:
+
+```bash
+if [ -f ".env" ]; then
+    echo "Found .env"
+else
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+        echo "Created .env from .env.example"
+    else
+        echo "ERROR: Neither .env nor .env.example found."
+    fi
+fi
+```
+
+## Step 2: Show Current Status
+
+Read `.env` and show which variables are set (mask actual values):
+
+```bash
+while IFS='=' read -r key value; do
+    # Skip comments and empty lines
+    [[ "$key" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "$key" ]] && continue
+    key="$(echo "$key" | xargs)"
+    if [ -n "$value" ]; then
+        echo "  $key = ****"
+    else
+        echo "  $key = (not set)"
+    fi
+done < .env
+```
+
+## Step 3: Configure Each Server
 
 Walk through each MCP server one at a time. For each, explain what it does and what credentials are needed.
 
-### 2a. Helius (Solana RPC + DAS + Webhooks)
+### 3a. Helius (Solana RPC + DAS + Webhooks)
 
 **What it provides**: 60+ tools for Solana queries, transactions, DAS (Digital Asset Standard) API, webhooks, and priority fee estimation via Helius APIs.
 
@@ -38,9 +70,9 @@ Walk through each MCP server one at a time. For each, explain what it does and w
 
 Ask the user: "Do you have a Helius API key? Paste it or type 'skip' to configure later."
 
-If provided, update `.claude/mcp.json` with the key in `mcpServers.helius.env.HELIUS_API_KEY`.
+If provided, write it to `.env` by updating the `HELIUS_API_KEY=` line. **Never modify `.mcp.json`.**
 
-### 2b. Solana Agent Kit (On-chain Actions)
+### 3b. Solana Agent Kit (On-chain Actions)
 
 **What it provides**: 60+ on-chain actions — token swaps, launches, lending, NFT minting, staking, domain resolution, and wallet management via the Solana Agent Kit.
 
@@ -56,9 +88,9 @@ If provided, update `.claude/mcp.json` with the key in `mcpServers.helius.env.HE
 
 Ask the user for RPC_URL and SOLANA_PRIVATE_KEY (or 'skip').
 
-If provided, update `.claude/mcp.json` with the values in `mcpServers.solana-agent-kit.env`.
+If provided, write them to `.env`. **Never modify `.mcp.json`.**
 
-### 2c. Solana Developer MCP (Docs + Expert)
+### 3c. Solana Developer MCP (Docs + Expert)
 
 **What it provides**: Real-time Solana documentation search, account queries, transaction analysis, CPI statement generation, and Anchor framework expertise. Connects to the official Solana Developer MCP at mcp.solana.com.
 
@@ -66,7 +98,7 @@ If provided, update `.claude/mcp.json` with the values in `mcpServers.solana-age
 
 Inform the user this server is ready to use with no configuration.
 
-### 2d. Context7 (Up-to-date Library Docs)
+### 3d. Context7 (Up-to-date Library Docs)
 
 **What it provides**: Fetches current documentation for any library or framework directly into context. Useful when working with fast-moving dependencies (Anchor, SPL, web3.js).
 
@@ -74,7 +106,7 @@ Inform the user this server is ready to use with no configuration.
 
 Inform the user this server is ready to use with no configuration.
 
-### 2e. Puppeteer (Browser Automation)
+### 3e. Puppeteer (Browser Automation)
 
 **What it provides**: Browser automation — navigate pages, take screenshots, fill forms, click elements, execute JavaScript. Useful for testing frontends and scraping documentation.
 
@@ -82,7 +114,7 @@ Inform the user this server is ready to use with no configuration.
 
 Inform the user this server is ready to use with no configuration.
 
-## Step 3: Summary
+## Step 4: Summary
 
 Print a status table showing which servers are configured:
 
@@ -97,12 +129,13 @@ MCP Server Status:
 ─────────────────────────────────────────────────
 ```
 
-A server is "CONFIGURED" if its required env vars are non-empty in `.claude/mcp.json`. It "NEEDS KEYS" if any required env value is empty.
+A server is "CONFIGURED" if its required env vars are non-empty in `.env`. It "NEEDS KEYS" if any required env value is empty.
 
-## Step 4: Next Steps
+## Step 5: Next Steps
 
 Tell the user:
 - To apply changes, restart Claude Code or run `claude mcp list` to verify
 - Servers with empty keys will fail to connect until configured
 - They can re-run `/setup-mcp` anytime to update keys
-- For Helius, recommend starting with devnet: set `HELIUS_NETWORK=devnet`
+- Credentials are in `.env` (gitignored) — never committed to the repo
+- For Helius, recommend starting with devnet: set `HELIUS_NETWORK=devnet` in `.env`

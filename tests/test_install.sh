@@ -26,6 +26,10 @@ assert_dir_exists "$TEMP_DIR/.claude/agents" ".claude/agents/ directory exists"
 assert_dir_exists "$TEMP_DIR/.claude/commands" ".claude/commands/ directory exists"
 assert_file_exists "$TEMP_DIR/.claude/skills/SKILL.md" "SKILL.md exists"
 assert_json_valid "$TEMP_DIR/.claude/settings.json" "settings.json is valid JSON"
+assert_file_exists "$TEMP_DIR/.mcp.json" ".mcp.json exists at project root"
+assert_json_valid "$TEMP_DIR/.mcp.json" ".mcp.json is valid JSON"
+assert_file_exists "$TEMP_DIR/.env.example" ".env.example exists"
+assert_file_exists "$TEMP_DIR/.env" ".env was bootstrapped from .env.example"
 
 # Count agents
 AGENT_COUNT=$(find "$TEMP_DIR/.claude/agents" -name "*.md" | wc -l | tr -d ' ')

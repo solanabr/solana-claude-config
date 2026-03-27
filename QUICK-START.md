@@ -228,7 +228,7 @@ Edit `.claude/settings.json` to customize allowed commands.
 
 ### Configure MCP Servers
 
-Edit `.claude/mcp.json` to add API keys or additional MCP servers.
+Edit `.env` to add your API keys. MCP servers are configured in `.mcp.json` (uses `${VAR}` expansion).
 
 ---
 
@@ -276,7 +276,7 @@ bash update.sh /path/to/your-project
 - [.claude/agents/](./.claude/agents/) - All agent definitions
 - [.claude/commands/](./.claude/commands/) - All commands
 - [.claude/skills/](./.claude/skills/) - Knowledge base
-- [.claude/mcp.json](./.claude/mcp.json) - MCP server configs
+- [.mcp.json](./.mcp.json) - MCP server configs
 
 ---
 

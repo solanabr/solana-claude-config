@@ -34,6 +34,8 @@ if [ -n "${SOLANA_CLAUDE_LOCAL_SRC:-}" ] && [ -d "$SOLANA_CLAUDE_LOCAL_SRC/.clau
   mkdir -p "$TEMP_DIR/repo"
   cp -r "$SOLANA_CLAUDE_LOCAL_SRC/.claude" "$TEMP_DIR/repo/.claude"
   cp "$SOLANA_CLAUDE_LOCAL_SRC/CLAUDE-solana.md" "$TEMP_DIR/repo/CLAUDE-solana.md"
+  [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.mcp.json" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.mcp.json" "$TEMP_DIR/repo/.mcp.json"
+  [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.env.example" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.env.example" "$TEMP_DIR/repo/.env.example"
   [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.gitmodules" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.gitmodules" "$TEMP_DIR/repo/.gitmodules"
 else
   # Clone repo with submodules
@@ -59,6 +61,22 @@ if [ -f "$TARGET_DIR/CLAUDE.md" ]; then
   cp "$TARGET_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md.bak"
 fi
 cp "$TEMP_DIR/repo/CLAUDE-solana.md" "$TARGET_DIR/CLAUDE.md"
+
+# Copy .mcp.json to project root
+if [ -f "$TEMP_DIR/repo/.mcp.json" ]; then
+  echo "Copying .mcp.json..."
+  cp "$TEMP_DIR/repo/.mcp.json" "$TARGET_DIR/.mcp.json"
+fi
+
+# Copy .env.example and bootstrap .env if it doesn't exist
+if [ -f "$TEMP_DIR/repo/.env.example" ]; then
+  echo "Copying .env.example..."
+  cp "$TEMP_DIR/repo/.env.example" "$TARGET_DIR/.env.example"
+  if [ ! -f "$TARGET_DIR/.env" ]; then
+    cp "$TARGET_DIR/.env.example" "$TARGET_DIR/.env"
+    echo "Created .env from .env.example (gitignored — add your API keys here)"
+  fi
+fi
 
 # Copy .gitmodules if it exists
 if [ -f "$TEMP_DIR/repo/.gitmodules" ]; then
@@ -94,6 +112,6 @@ echo "Installation complete!"
 echo ""
 echo "Next steps:"
 echo "  1. cd $TARGET_DIR"
-echo "  2. Review $DEST_DIR/mcp.json and add your API keys"
+echo "  2. Edit .env with your API keys (Helius, RPC, etc.)"
 echo "  3. Run 'claude' to start Claude Code with Solana config"
 echo "  4. Try /build-program or /audit-solana commands"
