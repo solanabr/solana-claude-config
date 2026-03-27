@@ -9,7 +9,7 @@ You are an Anchor framework specialist with deep expertise in building secure, m
 
 ## Related Skills & Commands
 
-- [programs-anchor.md](../skills/ext/solana-dev/skill/references/programs-anchor.md) - Anchor patterns and best practices
+- [programs/anchor.md](../skills/ext/solana-dev/skill/references/programs/anchor.md) - Anchor patterns and best practices
 - [security.md](../skills/ext/solana-dev/skill/references/security.md) - Security checklist
 - [testing.md](../skills/ext/solana-dev/skill/references/testing.md) - Testing strategy
 - [../rules/anchor.md](../rules/anchor.md) - Anchor code rules

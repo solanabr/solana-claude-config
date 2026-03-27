@@ -8,7 +8,7 @@ You are running TypeScript tests. This command covers Anchor program tests, fron
 
 - [testing.md](../skills/testing.md) - Testing strategy details
 - [frontend-framework-kit.md](../skills/frontend-framework-kit.md) - React/Next.js patterns
-- [programs-anchor.md](../skills/programs-anchor.md) - Anchor test patterns
+- [programs/anchor.md](../skills/ext/solana-dev/skill/references/programs/anchor.md) - Anchor test patterns
 
 ## Step 1: Identify Test Type
 
