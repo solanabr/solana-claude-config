@@ -97,6 +97,19 @@ Pre-configured MCP servers in `.claude/mcp.json`:
 - Rules auto-load only for matching file patterns
 - Decision frameworks live in agents, not global context
 
+### External Skill Submodules
+
+| Submodule | Source | Purpose |
+|-----------|--------|---------|
+| `ext/solana-dev` | [solana-foundation/solana-dev-skill](https://github.com/solana-foundation/solana-dev-skill) | Core Solana development (programs, frontend, testing, security) |
+| `ext/sendai` | [sendaifun/skills](https://github.com/sendaifun/skills) | DeFi protocol integrations (Jupiter, Drift, Raydium, etc.) |
+| `ext/solana-game` | [solanabr/solana-game-skill](https://github.com/solanabr/solana-game-skill) | Game development (Unity, PlaySolana, PSG1) |
+| `ext/cloudflare` | [cloudflare/skills](https://github.com/cloudflare/skills) | Infrastructure (Workers, Agents SDK, MCP servers) |
+| `ext/trailofbits` | [trailofbits/skills](https://github.com/trailofbits/skills) | Security auditing and vulnerability scanning |
+| `ext/qedgen` | [QEDGen/solana-skills](https://github.com/QEDGen/solana-skills) | Formal verification with Lean 4 theorem proving |
+| `ext/colosseum` | [ColosseumOrg/colosseum-copilot](https://github.com/ColosseumOrg/colosseum-copilot) | Startup research, idea validation, hackathon projects (proprietary license) |
+| `ext/solana-mobile` | [solana-mobile/solana-mobile-dev-skill](https://github.com/solana-mobile/solana-mobile-dev-skill) | Solana Mobile Stack (MWA, Saga, dApp Store) |
+
 ### Modern Stack (2026)
 
 | Layer | Stack |
@@ -105,7 +118,7 @@ Pre-configured MCP servers in `.claude/mcp.json`:
 | Token Extensions | Token-2022 (transfer hooks, confidential transfers, metadata) |
 | Testing | Mollusk, LiteSVM, Surfpool, Trident |
 | Frontend | @solana/kit, Next.js 15, React 19 |
-| Mobile | React Native, Expo, Mobile Wallet Adapter |
+| Mobile | React Native, Expo, Mobile Wallet Adapter, Solana Mobile Stack |
 | Backend | Axum 0.8+, Tokio 1.40+, sqlx |
 | Unity Games | Solana.Unity-SDK, .NET 9, C# 13 |
 | PlaySolana | PSG1 console, PlayDex, SvalGuard |
@@ -139,7 +152,8 @@ Pre-configured MCP servers in `.claude/mcp.json`:
     │   │   ├── cloudflare/              # Cloudflare Workers, Agents SDK
     │   │   ├── trailofbits/             # Trail of Bits security skills
     │   │   ├── qedgen/                # QEDGen formal verification (Lean 4)
-    │   │   └── colosseum/              # Colosseum Copilot (startup research)
+    │   │   ├── colosseum/              # Colosseum Copilot (startup research)
+    │   │   └── solana-mobile/          # Solana Mobile Stack (MWA, Saga)
     │   ├── token-2022.md            # Token Extensions guide (local)
     │   ├── backend-async.md         # Axum/Tokio patterns (local)
     │   └── deployment.md            # Deployment workflows (local)
@@ -226,18 +240,6 @@ This config includes a pre-built GitHub Action (`.github/workflows/claude-code.y
 3. Team members can `@claude` in PR comments
 4. Claude responds with code suggestions using this configuration
 
-## External Skill Submodules
-
-| Submodule | Source | Purpose |
-|-----------|--------|---------|
-| `ext/solana-dev` | [solana-foundation/solana-dev-skill](https://github.com/solana-foundation/solana-dev-skill) | Core Solana development (programs, frontend, testing, security) |
-| `ext/sendai` | [sendaifun/skills](https://github.com/sendaifun/skills) | DeFi protocol integrations (Jupiter, Drift, Raydium, etc.) |
-| `ext/solana-game` | [solanabr/solana-game-skill](https://github.com/solanabr/solana-game-skill) | Game development (Unity, PlaySolana, PSG1) |
-| `ext/cloudflare` | [cloudflare/skills](https://github.com/cloudflare/skills) | Infrastructure (Workers, Agents SDK, MCP servers) |
-| `ext/trailofbits` | [trailofbits/skills](https://github.com/trailofbits/skills) | Security auditing and vulnerability scanning |
-| `ext/qedgen` | [QEDGen/solana-skills](https://github.com/QEDGen/solana-skills) | Formal verification with Lean 4 theorem proving |
-| `ext/colosseum` | [ColosseumOrg/colosseum-copilot](https://github.com/ColosseumOrg/colosseum-copilot) | Startup research, idea validation, hackathon projects (proprietary license) |
-
 ## Branch Workflow
 
 All new work starts on a feature branch:
@@ -289,6 +291,8 @@ This project builds on excellent work from the community:
 - **[QEDGen/solana-skills](https://github.com/QEDGen/solana-skills)** - Formal verification for Solana programs using Lean 4 theorem proving.
 
 - **[ColosseumOrg/colosseum-copilot](https://github.com/ColosseumOrg/colosseum-copilot)** - Solana startup research, idea validation, and hackathon project discovery from Colosseum. Proprietary license (Copyright Colosseum).
+
+- **[solana-mobile/solana-mobile-dev-skill](https://github.com/solana-mobile/solana-mobile-dev-skill)** - Solana Mobile Stack skills (Mobile Wallet Adapter, Saga Genesis Token, SKR address resolution).
 
 - **[0xquinto/bcherny-claude](https://github.com/0xquinto/bcherny-claude)** - Compiled Boris Cherny's (creator of Claude Code at Anthropic) best practices including verification loops, parallel Claude sessions, and CLAUDE.md patterns.
 

@@ -91,6 +91,17 @@ From [solana-game-skill](ext/solana-game/skill/):
 - [mobile.md](ext/solana-game/skill/mobile.md) — Mobile game patterns
 - [csharp-patterns.md](ext/solana-game/skill/csharp-patterns.md) — C# patterns for Solana
 
+## Mobile Development
+
+From [Solana Mobile](ext/solana-mobile/):
+
+- [ext/solana-mobile/README.md](ext/solana-mobile/README.md) — Solana Mobile Stack overview
+- [ext/solana-mobile/mwa/mwa-setup/SKILL.md](ext/solana-mobile/mwa/mwa-setup/SKILL.md) — Mobile Wallet Adapter setup
+- [ext/solana-mobile/mwa/mwa-connection/SKILL.md](ext/solana-mobile/mwa/mwa-connection/SKILL.md) — MWA wallet connection
+- [ext/solana-mobile/mwa/mwa-transactions/SKILL.md](ext/solana-mobile/mwa/mwa-transactions/SKILL.md) — MWA transaction signing
+- [ext/solana-mobile/genesis-token/SKILL.md](ext/solana-mobile/genesis-token/SKILL.md) — Saga Genesis Token
+- [ext/solana-mobile/skr-address-resolution/SKILL.md](ext/solana-mobile/skr-address-resolution/SKILL.md) — SKR address resolution
+
 ## Ideation & Research
 
 From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
@@ -124,4 +135,5 @@ From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
 | Token-2022, transfer hooks, extensions | token-2022.md |
 | Vulnerability scanning | ext/trailofbits → solana-vulnerability-scanner/ |
 | Formal verification, proofs | ext/qedgen → SKILL.md |
+| Mobile wallet adapter, Saga, dApp Store | ext/solana-mobile → mwa/, genesis-token/ |
 | Idea validation, competitive research, hackathon projects | ext/colosseum → colosseum-copilot/SKILL.md |
