@@ -24,6 +24,10 @@ Key references within:
 - [idl-codegen.md](ext/solana-dev/skill/references/idl-codegen.md) — Codama/Shank client generation
 - [payments.md](ext/solana-dev/skill/references/payments.md) — Commerce Kit, Kora, Solana Pay
 - [resources.md](ext/solana-dev/skill/references/resources.md) — Official documentation links
+- [common-errors.md](ext/solana-dev/skill/references/common-errors.md) — GLIBC errors, Anchor version conflicts, RPC errors, dependency fixes
+- [compatibility-matrix.md](ext/solana-dev/skill/references/compatibility-matrix.md) — Anchor/Solana CLI/Rust/Node.js version matching
+- [surfpool/overview.md](ext/solana-dev/skill/references/surfpool/overview.md) — Surfpool local network
+- [surfpool/cheatcodes.md](ext/solana-dev/skill/references/surfpool/cheatcodes.md) — Surfpool cheatcodes reference
 
 ## Token Extensions
 
@@ -136,4 +140,7 @@ From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
 | Vulnerability scanning | ext/trailofbits → solana-vulnerability-scanner/ |
 | Formal verification, proofs | ext/qedgen → SKILL.md |
 | Mobile wallet adapter, Saga, dApp Store | ext/solana-mobile → mwa/, genesis-token/ |
+| Toolchain errors, GLIBC, version conflicts | ext/solana-dev → common-errors.md |
+| Version compatibility, Anchor/CLI versions | ext/solana-dev → compatibility-matrix.md |
+| Surfpool local network, cheatcodes | ext/solana-dev → surfpool/ |
 | Idea validation, competitive research, hackathon projects | ext/colosseum → colosseum-copilot/SKILL.md |
