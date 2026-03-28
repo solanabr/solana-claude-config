@@ -5,18 +5,33 @@ set -euo pipefail
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/solanabr/solana-claude-config/main/install.sh | bash
 #   bash install.sh /path/to/project
+#   bash install.sh --agents /path/to/project   # agents + skills only (non-Claude users)
 
 REPO_URL="https://github.com/solanabr/solana-claude-config.git"
 BRANCH="main"
 
-TARGET_DIR="${1:-.}"
+# Parse flags
+AGENTS_ONLY=false
+TARGET_ARG=""
+for arg in "$@"; do
+  case "$arg" in
+    --agents) AGENTS_ONLY=true ;;
+    *) TARGET_ARG="$arg" ;;
+  esac
+done
+
+TARGET_DIR="${TARGET_ARG:-.}"
 mkdir -p "$TARGET_DIR"
 TARGET_DIR="$(cd "$TARGET_DIR" && pwd)"
 
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
-echo "Installing Solana Claude Config to: $TARGET_DIR"
+if [ "$AGENTS_ONLY" = true ]; then
+  echo "Installing Solana agents + skills to: $TARGET_DIR"
+else
+  echo "Installing Solana Claude Config to: $TARGET_DIR"
+fi
 
 # Support local source for testing: SOLANA_CLAUDE_LOCAL_SRC=/path/to/repo
 if [ -n "${SOLANA_CLAUDE_LOCAL_SRC:-}" ] && [ -d "$SOLANA_CLAUDE_LOCAL_SRC/.claude" ]; then
@@ -24,6 +39,7 @@ if [ -n "${SOLANA_CLAUDE_LOCAL_SRC:-}" ] && [ -d "$SOLANA_CLAUDE_LOCAL_SRC/.clau
   mkdir -p "$TEMP_DIR/repo"
   cp -r "$SOLANA_CLAUDE_LOCAL_SRC/.claude" "$TEMP_DIR/repo/.claude"
   cp "$SOLANA_CLAUDE_LOCAL_SRC/CLAUDE-solana.md" "$TEMP_DIR/repo/CLAUDE-solana.md"
+  [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.env.example" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.env.example" "$TEMP_DIR/repo/.env.example"
   [ -f "$SOLANA_CLAUDE_LOCAL_SRC/.gitmodules" ] && cp "$SOLANA_CLAUDE_LOCAL_SRC/.gitmodules" "$TEMP_DIR/repo/.gitmodules"
 else
   # Clone repo with submodules
@@ -31,60 +47,107 @@ else
   git clone --recurse-submodules --depth 1 --branch "$BRANCH" "$REPO_URL" "$TEMP_DIR/repo" 2>&1 | tail -1 || true
 fi
 
-# Copy .claude/ directory
-echo "Copying .claude/ configuration..."
-if [ -d "$TARGET_DIR/.claude" ]; then
-  echo "Warning: .claude/ already exists, merging..."
-fi
-cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
+if [ "$AGENTS_ONLY" = true ]; then
+  # Copy only agents and skills (knowledge files for any AI tool)
+  echo "Copying agents and skills..."
+  mkdir -p "$TARGET_DIR/.claude"
+  cp -r "$TEMP_DIR/repo/.claude/agents" "$TARGET_DIR/.claude/"
+  cp -r "$TEMP_DIR/repo/.claude/skills" "$TARGET_DIR/.claude/"
+  cp -r "$TEMP_DIR/repo/.claude/rules" "$TARGET_DIR/.claude/"
 
-# Copy CLAUDE-solana.md as CLAUDE.md
-echo "Copying CLAUDE.md..."
-if [ -f "$TARGET_DIR/CLAUDE.md" ]; then
-  echo "Warning: CLAUDE.md already exists, backing up to CLAUDE.md.bak"
-  cp "$TARGET_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md.bak"
-fi
-cp "$TEMP_DIR/repo/CLAUDE-solana.md" "$TARGET_DIR/CLAUDE.md"
+  # Copy .gitmodules for skill submodules
+  if [ -f "$TEMP_DIR/repo/.gitmodules" ]; then
+    cp "$TEMP_DIR/repo/.gitmodules" "$TARGET_DIR/.gitmodules"
+  fi
 
-# Copy .gitmodules if it exists
-if [ -f "$TEMP_DIR/repo/.gitmodules" ]; then
-  cp "$TEMP_DIR/repo/.gitmodules" "$TARGET_DIR/.gitmodules"
-fi
+  # Initialize submodules
+  echo "Initializing submodules..."
+  (cd "$TARGET_DIR" && git submodule update --init --recursive 2>/dev/null) || echo "Note: Submodule init skipped (not a git repo or submodules already set up)"
 
-# Initialize submodules in target
-echo "Initializing submodules..."
-(cd "$TARGET_DIR" && git submodule update --init --recursive 2>/dev/null) || echo "Note: Submodule init skipped (not a git repo or submodules already set up)"
-
-# Add .claude/skills/ext/ to .gitignore if not present
-GITIGNORE="$TARGET_DIR/.gitignore"
-EXT_PATTERN=".claude/skills/ext/"
-if [ -f "$GITIGNORE" ]; then
-  if ! grep -qF "$EXT_PATTERN" "$GITIGNORE"; then
-    echo "" >> "$GITIGNORE"
-    echo "# External Claude skill submodules" >> "$GITIGNORE"
+  # Add .claude/skills/ext/ to .gitignore
+  GITIGNORE="$TARGET_DIR/.gitignore"
+  EXT_PATTERN=".claude/skills/ext/"
+  if [ -f "$GITIGNORE" ]; then
+    if ! grep -qF "$EXT_PATTERN" "$GITIGNORE"; then
+      echo "" >> "$GITIGNORE"
+      echo "# External Claude skill submodules" >> "$GITIGNORE"
+      echo "$EXT_PATTERN" >> "$GITIGNORE"
+      echo "Added $EXT_PATTERN to .gitignore"
+    fi
+  else
+    echo "# External Claude skill submodules" > "$GITIGNORE"
     echo "$EXT_PATTERN" >> "$GITIGNORE"
-    echo "Added $EXT_PATTERN to .gitignore"
+    echo "Created .gitignore with $EXT_PATTERN"
   fi
+
+  echo ""
+  echo "Installation complete! (agents-only mode)"
+  echo ""
+  echo "Installed:"
+  echo "  .claude/agents/   — 15 specialized Solana agent definitions"
+  echo "  .claude/skills/   — Progressive-loading knowledge base"
+  echo "  .claude/rules/    — Auto-loading constraint files"
+  echo ""
+  echo "These .md files work as system prompts or context for any AI tool"
+  echo "(Cursor, Windsurf, Copilot, etc.)."
 else
-  echo "# External Claude skill submodules" > "$GITIGNORE"
-  echo "$EXT_PATTERN" >> "$GITIGNORE"
-  echo "Created .gitignore with $EXT_PATTERN"
-fi
+  # Full install — everything for Claude Code
 
-# Copy .env.example and create .env if missing
-if [ -f "$TEMP_DIR/repo/.env.example" ]; then
-  cp "$TEMP_DIR/repo/.env.example" "$TARGET_DIR/.env.example"
-  if [ ! -f "$TARGET_DIR/.env" ]; then
-    cp "$TARGET_DIR/.env.example" "$TARGET_DIR/.env"
-    echo "Created .env from .env.example"
+  # Copy .claude/ directory
+  echo "Copying .claude/ configuration..."
+  if [ -d "$TARGET_DIR/.claude" ]; then
+    echo "Warning: .claude/ already exists, merging..."
   fi
-fi
+  cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
 
-echo ""
-echo "Installation complete!"
-echo ""
-echo "Next steps:"
-echo "  1. cd $TARGET_DIR"
-echo "  2. Edit .env to add your API keys (Helius, RPC, etc.)"
-echo "  3. Run 'claude' to start Claude Code with Solana config"
-echo "  4. Try /build-program or /audit-solana commands"
+  # Copy CLAUDE-solana.md as CLAUDE.md
+  echo "Copying CLAUDE.md..."
+  if [ -f "$TARGET_DIR/CLAUDE.md" ]; then
+    echo "Warning: CLAUDE.md already exists, backing up to CLAUDE.md.bak"
+    cp "$TARGET_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md.bak"
+  fi
+  cp "$TEMP_DIR/repo/CLAUDE-solana.md" "$TARGET_DIR/CLAUDE.md"
+
+  # Copy .gitmodules if it exists
+  if [ -f "$TEMP_DIR/repo/.gitmodules" ]; then
+    cp "$TEMP_DIR/repo/.gitmodules" "$TARGET_DIR/.gitmodules"
+  fi
+
+  # Initialize submodules in target
+  echo "Initializing submodules..."
+  (cd "$TARGET_DIR" && git submodule update --init --recursive 2>/dev/null) || echo "Note: Submodule init skipped (not a git repo or submodules already set up)"
+
+  # Add .claude/skills/ext/ to .gitignore if not present
+  GITIGNORE="$TARGET_DIR/.gitignore"
+  EXT_PATTERN=".claude/skills/ext/"
+  if [ -f "$GITIGNORE" ]; then
+    if ! grep -qF "$EXT_PATTERN" "$GITIGNORE"; then
+      echo "" >> "$GITIGNORE"
+      echo "# External Claude skill submodules" >> "$GITIGNORE"
+      echo "$EXT_PATTERN" >> "$GITIGNORE"
+      echo "Added $EXT_PATTERN to .gitignore"
+    fi
+  else
+    echo "# External Claude skill submodules" > "$GITIGNORE"
+    echo "$EXT_PATTERN" >> "$GITIGNORE"
+    echo "Created .gitignore with $EXT_PATTERN"
+  fi
+
+  # Copy .env.example and create .env if missing
+  if [ -f "$TEMP_DIR/repo/.env.example" ]; then
+    cp "$TEMP_DIR/repo/.env.example" "$TARGET_DIR/.env.example"
+    if [ ! -f "$TARGET_DIR/.env" ]; then
+      cp "$TARGET_DIR/.env.example" "$TARGET_DIR/.env"
+      echo "Created .env from .env.example"
+    fi
+  fi
+
+  echo ""
+  echo "Installation complete!"
+  echo ""
+  echo "Next steps:"
+  echo "  1. cd $TARGET_DIR"
+  echo "  2. Edit .env to add your API keys (Helius, RPC, etc.)"
+  echo "  3. Run 'claude' to start Claude Code with Solana config"
+  echo "  4. Try /build-program or /audit-solana commands"
+fi

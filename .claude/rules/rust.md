@@ -400,4 +400,10 @@ pub fn complex_function(/* many args */) {}
 
 ---
 
+## Solana-Specific Practices
+
+- Don't hardcode RPC URLs — use environment variables or config
+- Don't use `solana-test-validator` for unit tests — use LiteSVM or Mollusk (faster, in-process)
+- Use Surfpool for integration testing against mainnet/devnet state
+
 **Remember**: These rules ensure code safety, maintainability, and Solana compatibility. Security is paramount - when in doubt, choose the safer option.

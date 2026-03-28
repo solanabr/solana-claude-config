@@ -75,6 +75,7 @@ You are maintaining the **solana-claude-config** repository - a template/library
     │   │   ├── cloudflare/        # cloudflare/skills
     │   │   ├── trailofbits/       # trailofbits/skills (security)
     │   │   ├── qedgen/            # QEDGen/solana-skills (formal verification)
+    │   │   ├── solana-mobile/     # nicoorfi/solana-mobile (MWA, Genesis Token, SKR)
     │   │   └── colosseum/         # ColosseumOrg/colosseum-copilot (startup research)
     │   ├── token-2022.md      # Local: Token Extensions guide
     │   ├── backend-async.md   # Local: Axum/Tokio patterns

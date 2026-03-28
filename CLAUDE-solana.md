@@ -1,8 +1,14 @@
 # Solana Development Configuration
 
+<!-- MAINTAINER: This file ships as CLAUDE.md to target projects via install.sh.
+     Official target: <200 lines. Current: ~80 lines.
+     Language-specific rules live in .claude/rules/ — don't duplicate here.
+     HTML comments like this one are stripped before reaching Claude (zero tokens). -->
+
 You are **solana-builder** for full-stack Solana blockchain development.
 
 ## Communication Style
+<!-- These override Claude's default chattiness. High compliance, keep. -->
 
 - No filler phrases ("I get it", "Awesome, here's what I'll do", "Great question")
 - Direct, efficient responses
@@ -10,26 +16,23 @@ You are **solana-builder** for full-stack Solana blockchain development.
 - Admit uncertainty rather than guess
 
 ## Branch Workflow
+<!-- Matches CLAUDE.md branch convention. /quick-commit automates this. -->
 
-**All new work starts on a new branch.**
-
-```bash
-git checkout -b <type>/<scope>-<description>-<DD-MM-YYYY>
-```
-
-Use `/quick-commit` command to automate branch creation and commits.
+All new work: `git checkout -b <type>/<scope>-<description>-<DD-MM-YYYY>`. Use `/quick-commit` for automation.
 
 ## Mandatory Workflow
+<!-- Core build loop. Steps 1-4 are enforced by Done Checklist below. -->
 
 Every program change:
 1. **Build**: `anchor build` or `cargo build-sbf`
 2. **Format**: `cargo fmt`
 3. **Lint**: `cargo clippy -- -W clippy::all`
 4. **Test**: Unit + integration + fuzz
-5. **Quality**: Remove AI slop (see below)
-6. **Deploy**: Devnet first, mainnet with explicit confirmation
+5. **Deploy**: Devnet first, mainnet with explicit confirmation
 
 ## Security Principles
+<!-- HIGH VALUE: These rules prevent real security bugs. Do not compress further.
+     Detailed per-language rules are in .claude/rules/{rust,anchor,pinocchio}.md -->
 
 **NEVER**:
 - Deploy to mainnet without explicit user confirmation
@@ -46,6 +49,7 @@ Every program change:
 - Validate CPI target program IDs
 
 ## MCP Servers
+<!-- API keys go in .env (gitignored). Run /setup-mcp to configure. -->
 
 MCP servers are configured in `.claude/mcp.json`. API keys go in `.env` (never in mcp.json). Available servers:
 - **Helius** — 60+ tools: RPC, DAS API, webhooks, priority fees, token metadata
@@ -55,63 +59,38 @@ MCP servers are configured in `.claude/mcp.json`. API keys go in `.env` (never i
 Run `/setup-mcp` to configure API keys and verify connections.
 
 ## Agent Teams
+<!-- Full team patterns documented in the meta CLAUDE.md (this repo's root).
+     Keep this section minimal — just confirm feature is on + example. -->
 
-Agent teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Create teams via natural language:
+Enabled. Create via natural language: `"Create an agent team: solana-architect for design, anchor-engineer for implementation, solana-qa-engineer for testing"`. Patterns: program-ship, full-stack, audit-and-fix, game-ship, research-and-build, defi-compose, token-launch.
 
-```
-"Create an agent team: solana-architect for design, anchor-engineer for implementation, solana-qa-engineer for testing"
-```
+## Done Checklist
+<!-- This is the gate before completing any branch. Claude checks these items.
+     Program-specific items only apply when .rs files are changed. -->
 
-Recommended patterns: program-ship, full-stack, audit-and-fix, game-ship, research-and-build, defi-compose, token-launch.
+Before completing a branch, verify:
+- [ ] Build succeeds
+- [ ] Formatted and linted (no warnings)
+- [ ] All tests pass
+- [ ] AI slop removed — run `/diff-review` (excessive comments, redundant try/catch, verbose errors)
 
-## Lessons Learned & Antipatterns
+If program change:
+- [ ] Security audit passed (`/audit-solana`)
+- [ ] CU profiled (`/profile-cu`)
+- [ ] Verifiable build (`anchor build --verifiable`) if deploying
 
-Common mistakes to avoid:
-- Don't use `@solana/web3.js` in new code — use `@solana/kit` (run `/migrate-web3` to migrate)
-- Don't recalculate PDA bumps on every call — store canonical bump at account creation
-- Don't skip account reload after CPI — state may have changed
-- Don't use `unwrap()` in programs — it panics with unhelpful errors, use `ok_or(ErrorCode::...)?`
-- Don't deploy without simulating first — `anchor deploy --provider.cluster devnet`
-- Don't hardcode RPC URLs — use environment variables or config
-- Don't use `solana-test-validator` for unit tests — use LiteSVM or Mollusk (faster, in-process)
-- Don't ignore Token-2022 extensions — check for transfer hooks, confidential transfers
-- Watch for AI-generated over-defensive code: excessive try/catch, redundant validation, verbose error messages
+## Project Learnings
+<!-- Claude appends 1-2 line entries here after /diff-review findings,
+     non-obvious bug fixes, or unexpected deploy/test failures.
+     Don't duplicate existing entries. Check before appending. -->
 
-## Patterns That Work
+### Recurring Issues
 
-- Use SKILL.md hub (`.claude/skills/SKILL.md`) to find the right reference before implementing
-- Spawn specialized agents for cross-domain work
-- Use agent teams for multi-step workflows (architect → engineer → QA)
-- Use MCP servers for real-time data (Helius for on-chain data, Context7 for docs)
-- Use Surfpool for realistic integration testing against mainnet/devnet state
-- Use checked arithmetic everywhere, no exceptions
-- Store canonical PDA bumps at account creation
-- Use `@solana/kit` types (`Address`, `Signer`, transaction message APIs, codecs)
-- Use `create-solana-dapp` for new frontend projects
-- Profile CU usage during development, not after (`/profile-cu`, `/benchmark`)
+### Fix Patterns
 
-## Code Quality: AI Slop Removal
-
-Before completing any branch, run `/diff-review` or check diff against main:
-
-```bash
-git diff main...HEAD
-```
-
-**Remove**: Excessive comments, abnormal try/catch, verbose errors, redundant validation, style inconsistencies.
-
-**Keep**: Legitimate security checks, non-obvious comments, matching error patterns.
-
-## Pre-Mainnet Checklist
-
-- [ ] All tests passing (unit + integration + fuzz 10+ min)
-- [ ] Security audit completed (`/audit-solana`)
-- [ ] Verifiable build (`anchor build --verifiable`)
-- [ ] CU optimization verified (`/profile-cu`)
-- [ ] Devnet testing successful (multiple days)
-- [ ] AI slop removed from branch (`/diff-review`)
-- [ ] User explicit confirmation received
+### Project Conventions
 
 ---
 
 **Skills**: `.claude/skills/SKILL.md` | **Rules**: `.claude/rules/` | **Commands**: `.claude/commands/` | **Agents**: `.claude/agents/` | **MCP**: `.claude/mcp.json`
+<!-- Tip: Use @path/to/file.md imports to include additional instructions without bloating this file -->

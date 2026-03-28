@@ -1,12 +1,15 @@
 # Solana Claude Configuration
 
-Production-ready Claude Code configuration for full-stack Solana development. Combines best practices from multiple sources into an agent-optimized, token-efficient config you can copy over and adapt to your specific project.
+Production-ready Claude Code configuration for full-stack Solana development. Combines best practices from multiple sources into an agent-optimized, token-efficient config you can install and adapt to your specific project.
+
+The idea here is to provide a generic CLAUDE.md that relies on subagents to plan and execute actions, dynamically loading markdown files, saving tokens and context in the end of the day. This config fully leverages the official Claude Code config recommandations:
+- Rules are only loaded whenever specific file types are involved;
+- SKILL.md is a mega hub to dynamically-disclosed skill files that are directly fetched from the best skill repos distributed across the ecosystem (Solana Foundation, Colosseum, Solana Mobile, SendAI, etc);
+- Plus, it's CLAUDE-solana.md is less than half the size of the usual CLAUDE.md, leaving space for it's self improvements programmed into the agents, noting and learning from anti-patterns, errors, recurrecy and more.
 
 Current multi-agent workflow favors monorepos, so we use a single CLAUDE.md/config for the whole project while leveraging agents and context-specific skills to solve each step of builder flow.
 
-The idea here is to provide a generic CLAUDE.md that relies on subagents to plan and execute actions, dynamically loading markdown files for context, saving tokens in the end of the day.
-
-Remember to rename ./CLAUDE-solana.md back to ./CLAUDE.md, as the current top-level CLAUDE.md file is focused on maintaining the repo itself.
+If you installed manually, remember to rename ./CLAUDE-solana.md back to ./CLAUDE.md, as the current top-level CLAUDE.md file is focused on maintaining the repo itself.
 
 ## What This Is
 
@@ -22,10 +25,13 @@ A complete `.claude/` configuration that turns Claude into a Solana development 
 ## Quick Start
 
 ```bash
-# Option 1: One-liner installer
+# Option 1: One-liner installer (Claude Code)
 curl -fsSL https://raw.githubusercontent.com/solanabr/solana-claude-config/main/install.sh | bash
 
-# Option 2: Manual setup
+# Option 2: Agents + skills only (Cursor, Windsurf, Copilot, etc.)
+curl -fsSL https://raw.githubusercontent.com/solanabr/solana-claude-config/main/install.sh | bash -s -- --agents
+
+# Option 3: Manual setup
 git clone --recurse-submodules https://github.com/solanabr/solana-claude-config.git
 cp -r solana-claude-config/.claude /path/to/your-project/
 cp solana-claude-config/CLAUDE-solana.md /path/to/your-project/CLAUDE.md
@@ -35,7 +41,24 @@ cd /path/to/your-project && git submodule update --init --recursive
 claude
 ```
 
-### MCP Setup (Optional)
+### `--agents` Flag (Non-Claude Users)
+
+If you use Cursor, Windsurf, Copilot, or another AI tool, pass `--agents` to install only the knowledge files:
+
+```bash
+bash install.sh --agents /path/to/your-project
+```
+
+This installs `.claude/agents/`, `.claude/skills/`, and `.claude/rules/` — the markdown files that work as system prompts or context for any AI tool. It skips Claude Code-specific files (commands, mcp.json, settings.json, CLAUDE.md).
+
+To update an agents-only install:
+
+```bash
+bash update.sh --agents /path/to/your-project
+# or just: bash update.sh /path/to/your-project  (auto-detects agents-only)
+```
+
+### MCP Setup (Optional, Claude Code only)
 
 After installation, configure MCP servers for enhanced capabilities:
 
@@ -139,6 +162,7 @@ Pre-configured MCP servers in `.claude/mcp.json` (API keys go in `.env`):
     │   │   ├── cloudflare/              # Cloudflare Workers, Agents SDK
     │   │   ├── trailofbits/             # Trail of Bits security skills
     │   │   ├── qedgen/                # QEDGen formal verification (Lean 4)
+    │   │   ├── solana-mobile/           # Mobile Wallet Adapter, Genesis Token
     │   │   └── colosseum/              # Colosseum Copilot (startup research)
     │   ├── token-2022.md            # Token Extensions guide (local)
     │   ├── backend-async.md         # Axum/Tokio patterns (local)
@@ -212,8 +236,8 @@ Pre-configured MCP servers in `.claude/mcp.json` (API keys go in `.env`):
 
 | Script | Purpose |
 |--------|---------|
-| `install.sh` | One-liner installer: copies config to your project |
-| `update.sh` | Updates config in existing project to latest version |
+| `install.sh` | One-liner installer: copies config to your project (`--agents` for non-Claude tools) |
+| `update.sh` | Updates config in existing project to latest version (`--agents` or auto-detects) |
 | `validate.sh` | Validates all config integrity (agents, commands, skills, settings) |
 | `tests/run_all.sh` | Runs full test suite for config validation |
 
@@ -236,6 +260,7 @@ This config includes a pre-built GitHub Action (`.github/workflows/claude-code.y
 | `ext/cloudflare` | [cloudflare/skills](https://github.com/cloudflare/skills) | Infrastructure (Workers, Agents SDK, MCP servers) |
 | `ext/trailofbits` | [trailofbits/skills](https://github.com/trailofbits/skills) | Security auditing and vulnerability scanning |
 | `ext/qedgen` | [QEDGen/solana-skills](https://github.com/QEDGen/solana-skills) | Formal verification with Lean 4 theorem proving |
+| `ext/solana-mobile` | [nicoorfi/solana-mobile](https://github.com/nicoorfi/solana-mobile) | Mobile Wallet Adapter, Genesis Token, SKR address resolution |
 | `ext/colosseum` | [ColosseumOrg/colosseum-copilot](https://github.com/ColosseumOrg/colosseum-copilot) | Startup research, idea validation, hackathon projects (proprietary license) |
 
 ## Branch Workflow
@@ -265,8 +290,11 @@ Keep: legitimate security checks, non-obvious explanations, matching error patte
 ## Updating
 
 ```bash
-# Update config in your project
+# Update full config
 bash update.sh /path/to/your-project
+
+# Update agents-only install
+bash update.sh --agents /path/to/your-project
 
 # Or manually update submodules
 git submodule update --remote --merge

@@ -2,17 +2,29 @@
 set -euo pipefail
 
 # Solana Claude Config Updater
-# Usage: bash update.sh /path/to/project
+# Usage:
+#   bash update.sh /path/to/project
+#   bash update.sh --agents /path/to/project   # agents + skills only
 
 REPO_URL="https://github.com/solanabr/solana-claude-config.git"
 BRANCH="main"
 
-if [ $# -lt 1 ]; then
-  echo "Usage: bash update.sh /path/to/project"
+# Parse flags
+AGENTS_ONLY=false
+TARGET_ARG=""
+for arg in "$@"; do
+  case "$arg" in
+    --agents) AGENTS_ONLY=true ;;
+    *) TARGET_ARG="$arg" ;;
+  esac
+done
+
+if [ -z "$TARGET_ARG" ]; then
+  echo "Usage: bash update.sh [--agents] /path/to/project"
   exit 1
 fi
 
-TARGET_DIR="$(cd "$1" && pwd)"
+TARGET_DIR="$(cd "$TARGET_ARG" && pwd)"
 
 # Verify target has .claude/
 if [ ! -d "$TARGET_DIR/.claude" ]; then
@@ -20,10 +32,20 @@ if [ ! -d "$TARGET_DIR/.claude" ]; then
   exit 1
 fi
 
+# Auto-detect agents-only install (no settings.json = agents-only)
+if [ ! -f "$TARGET_DIR/.claude/settings.json" ] && [ "$AGENTS_ONLY" = false ]; then
+  AGENTS_ONLY=true
+  echo "Detected agents-only install (no settings.json). Using --agents mode."
+fi
+
 TEMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
-echo "Updating Solana Claude Config in: $TARGET_DIR"
+if [ "$AGENTS_ONLY" = true ]; then
+  echo "Updating Solana agents + skills in: $TARGET_DIR"
+else
+  echo "Updating Solana Claude Config in: $TARGET_DIR"
+fi
 
 # Support local source for testing: SOLANA_CLAUDE_LOCAL_SRC=/path/to/repo
 if [ -n "${SOLANA_CLAUDE_LOCAL_SRC:-}" ] && [ -d "$SOLANA_CLAUDE_LOCAL_SRC/.claude" ]; then
@@ -44,22 +66,34 @@ fi
 # Track what changed
 CHANGES=""
 
-# Compare and copy .claude/
-if ! diff -rq "$TEMP_DIR/repo/.claude" "$TARGET_DIR/.claude" >/dev/null 2>&1; then
-  CHANGES="$CHANGES  - .claude/ directory updated\n"
-fi
-
-cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
-
-# Compare and copy CLAUDE.md
-if [ -f "$TEMP_DIR/repo/CLAUDE-solana.md" ]; then
-  if ! diff -q "$TEMP_DIR/repo/CLAUDE-solana.md" "$TARGET_DIR/CLAUDE.md" >/dev/null 2>&1; then
-    CHANGES="$CHANGES  - CLAUDE.md updated\n"
+if [ "$AGENTS_ONLY" = true ]; then
+  # Update only agents, skills, and rules
+  for dir in agents skills rules; do
+    if [ -d "$TEMP_DIR/repo/.claude/$dir" ]; then
+      if ! diff -rq "$TEMP_DIR/repo/.claude/$dir" "$TARGET_DIR/.claude/$dir" >/dev/null 2>&1; then
+        CHANGES="$CHANGES  - .claude/$dir/ updated\n"
+      fi
+      cp -r "$TEMP_DIR/repo/.claude/$dir" "$TARGET_DIR/.claude/"
+    fi
+  done
+else
+  # Full update
+  if ! diff -rq "$TEMP_DIR/repo/.claude" "$TARGET_DIR/.claude" >/dev/null 2>&1; then
+    CHANGES="$CHANGES  - .claude/ directory updated\n"
   fi
-  cp "$TEMP_DIR/repo/CLAUDE-solana.md" "$TARGET_DIR/CLAUDE.md"
+
+  cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
+
+  # Compare and copy CLAUDE.md
+  if [ -f "$TEMP_DIR/repo/CLAUDE-solana.md" ]; then
+    if ! diff -q "$TEMP_DIR/repo/CLAUDE-solana.md" "$TARGET_DIR/CLAUDE.md" >/dev/null 2>&1; then
+      CHANGES="$CHANGES  - CLAUDE.md updated\n"
+    fi
+    cp "$TEMP_DIR/repo/CLAUDE-solana.md" "$TARGET_DIR/CLAUDE.md"
+  fi
 fi
 
-# Copy .gitmodules
+# Copy .gitmodules (needed for both modes — skill submodules)
 if [ -f "$TEMP_DIR/repo/.gitmodules" ]; then
   if ! diff -q "$TEMP_DIR/repo/.gitmodules" "$TARGET_DIR/.gitmodules" >/dev/null 2>&1; then
     CHANGES="$CHANGES  - .gitmodules updated\n"

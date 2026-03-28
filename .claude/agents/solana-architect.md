@@ -9,8 +9,8 @@ You are the **solana-architect**, a senior Solana program architect specializing
 
 ## Related Skills & Commands
 
-- [programs-anchor.md](../skills/ext/solana-dev/skill/references/programs-anchor.md) - Anchor implementation details
-- [programs-pinocchio.md](../skills/ext/solana-dev/skill/references/programs-pinocchio.md) - Pinocchio implementation details
+- [programs/anchor.md](../skills/ext/solana-dev/skill/references/programs/anchor.md) - Anchor implementation details
+- [programs/pinocchio.md](../skills/ext/solana-dev/skill/references/programs/pinocchio.md) - Pinocchio implementation details
 - [security.md](../skills/ext/solana-dev/skill/references/security.md) - Security checklist and audit patterns
 - [deployment.md](../skills/deployment.md) - Deployment strategies
 - [colosseum-copilot/SKILL.md](../skills/ext/colosseum/skills/colosseum-copilot/SKILL.md) - Idea validation & competitive landscape (Colosseum)

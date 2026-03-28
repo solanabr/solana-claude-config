@@ -234,9 +234,14 @@ The review should systematically check:
 - [ ] **AI slop** - No excessive comments, verbose errors, or redundant patterns
 - [ ] **Test coverage** - New code has corresponding tests
 
+## Step 6: Capture Learnings
+
+If any CRITICAL or WARNING finding represents a recurring pattern or project-specific antipattern not already in the "Project Learnings" section of `CLAUDE.md`, append a 1-2 line entry to the appropriate subsection (Recurring Issues, Fix Patterns, or Project Conventions).
+
 ## After Review
 
 - [ ] All Critical issues resolved
 - [ ] Warning issues addressed or documented as accepted risk
 - [ ] Info suggestions considered
+- [ ] Learnings captured in CLAUDE.md if applicable
 - [ ] Branch ready for merge

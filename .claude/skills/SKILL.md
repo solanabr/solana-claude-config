@@ -15,8 +15,8 @@ Routes to the right skill file based on the task. Read the relevant section, fol
 - [ext/solana-dev/skill/SKILL.md](ext/solana-dev/skill/SKILL.md) — Solana Foundation skill (framework-kit-first, Kit types, wallet-standard)
 
 Key references within:
-- [programs/anchor.md](ext/solana-dev/skill/references/programs/anchor.md) — Anchor patterns, IDL, constraints
-- [programs/pinocchio.md](ext/solana-dev/skill/references/programs/pinocchio.md) — Zero-copy, CU optimization
+- [programs/anchor.md](ext/solana-dev/skill/references/programs/anchor.md) — Anchor patterns, IDL, constraints (canonical)
+- [programs/pinocchio.md](ext/solana-dev/skill/references/programs/pinocchio.md) — Zero-copy, CU optimization (canonical)
 - [frontend-framework-kit.md](ext/solana-dev/skill/references/frontend-framework-kit.md) — React hooks, wallet connection, @solana/kit UI
 - [kit-web3-interop.md](ext/solana-dev/skill/references/kit-web3-interop.md) — Kit ↔ web3.js boundary patterns
 - [testing.md](ext/solana-dev/skill/references/testing.md) — LiteSVM, Mollusk, Surfpool, CI
@@ -52,6 +52,14 @@ Protocol-specific skills from [SendAI](ext/sendai/skills/):
 | DeBridge | [debridge/](ext/sendai/skills/debridge/) | Cross-chain bridging |
 | Light Protocol | [light-protocol/](ext/sendai/skills/light-protocol/) | ZK compression |
 | Solana Agent Kit | [solana-agent-kit/](ext/sendai/skills/solana-agent-kit/) | AI agent framework |
+| Phantom Connect | [phantom-connect/](ext/sendai/skills/phantom-connect/) | Phantom wallet connection |
+| MagicBlock | [magicblock/](ext/sendai/skills/magicblock/) | On-chain game engine |
+| QuickNode | [quicknode/](ext/sendai/skills/quicknode/) | RPC, streams, functions |
+| Solana Kit | [solana-kit/](ext/sendai/skills/solana-kit/) | @solana/kit patterns |
+| Solana Kit Migration | [solana-kit-migration/](ext/sendai/skills/solana-kit-migration/) | web3.js → Kit migration |
+| Manifest | [manifest/](ext/sendai/skills/manifest/) | Order book DEX |
+| dFlow | [dflow/](ext/sendai/skills/dflow/) | Payment-for-order-flow |
+| VulnHunter | [vulnhunter/](ext/sendai/skills/vulnhunter/) | Vulnerability scanning |
 
 ## Security Auditing
 
@@ -76,6 +84,9 @@ From [Cloudflare](ext/cloudflare/skills/):
 - [workers-best-practices/](ext/cloudflare/skills/workers-best-practices/) — Cloudflare Workers deployment
 - [agents-sdk/](ext/cloudflare/skills/agents-sdk/) — Agents SDK
 - [building-mcp-server-on-cloudflare/](ext/cloudflare/skills/building-mcp-server-on-cloudflare/) — MCP server deployment
+- [building-ai-agent-on-cloudflare/](ext/cloudflare/skills/building-ai-agent-on-cloudflare/) — AI agent deployment on Workers
+- [durable-objects/](ext/cloudflare/skills/durable-objects/) — Durable Objects patterns
+- [wrangler/](ext/cloudflare/skills/wrangler/) — Wrangler CLI usage
 
 Local:
 - [deployment.md](deployment.md) — Devnet/mainnet workflows, verifiable builds, multisig, CI/CD
@@ -90,6 +101,14 @@ From [solana-game-skill](ext/solana-game/skill/):
 - [game-architecture.md](ext/solana-game/skill/game-architecture.md) — On-chain game state, ECS patterns
 - [mobile.md](ext/solana-game/skill/mobile.md) — Mobile game patterns
 - [csharp-patterns.md](ext/solana-game/skill/csharp-patterns.md) — C# patterns for Solana
+
+## Mobile Development
+
+From [solana-mobile](ext/solana-mobile/):
+
+- [mwa/](ext/solana-mobile/mwa/) — Mobile Wallet Adapter 2.0 integration
+- [genesis-token/](ext/solana-mobile/genesis-token/) — Saga Genesis Token patterns
+- [skr-address-resolution/](ext/solana-mobile/skr-address-resolution/) — SKR address resolution
 
 ## Ideation & Research
 
@@ -121,6 +140,8 @@ From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
 | PlaySolana, PSG1 console | ext/solana-game → playsolana.md |
 | Game architecture, ECS | ext/solana-game → game-architecture.md |
 | Workers, edge deployment | ext/cloudflare → workers-best-practices/ |
+| Mobile wallet adapter, MWA | ext/solana-mobile → mwa/ |
+| Saga Genesis Token | ext/solana-mobile → genesis-token/ |
 | Token-2022, transfer hooks, extensions | token-2022.md |
 | Vulnerability scanning | ext/trailofbits → solana-vulnerability-scanner/ |
 | Formal verification, proofs | ext/qedgen → SKILL.md |
