@@ -10,6 +10,18 @@ This repository contains Claude Code configuration for Solana development projec
 
 You are maintaining the **solana-claude-config** repository - a template/library of Claude Code configurations for Solana development. Your role is to improve, test, and maintain the agents, skills, commands, MCP servers, and rules that other projects will use.
 
+## Token Loading Model
+
+| File | When loaded | Audience | Budget guidance |
+|------|-------------|----------|-----------------|
+| `CLAUDE.md` | Every conversation (this repo) | Claude maintaining config | Keep lean (<100 lines) |
+| `CLAUDE-solana.md` | Every conversation (user projects) | Claude in target projects | Keep <100 lines; HTML comments stripped (free) |
+| `.claude/rules/*.md` | Auto-loaded by glob match | Claude editing matched files | Minimal — loads on every matching file edit |
+| `.claude/agents/*.md` | On agent spawn only | Spawned agent | Can be detailed — only loads when needed |
+| `.claude/commands/*.md` | On command invocation | Claude running command | Can be detailed — only loads when invoked |
+| `.claude/skills/SKILL.md` | On skill invocation | Claude routing to skills | Medium — routing hub, not a dump; HTML comments NOT stripped |
+| `.claude/skills/*.md` | On-demand via SKILL.md links | Claude needing domain knowledge | Can be detailed — progressive loading |
+
 ## Communication Style
 
 - No filler phrases ("I get it", "Awesome, here's what I'll do", "Great question")
@@ -45,6 +57,12 @@ When X changes, also update Y:
 | Modify **install.sh** | Test: `bash tests/test_install.sh` in temp dir |
 | Modify **CLAUDE-solana.md** | This ships to ALL user projects — different audience than this repo |
 
+## Submodule Pitfalls
+
+- **Never** `git add .claude/skills/ext/<dir>` — commits as tree, not submodule. Use `git submodule add <url> .claude/skills/ext/<name>` then `git add .gitmodules .claude/skills/ext/<name>`.
+- Path renames in upstream submodules ripple into all agents + commands that reference skill files. Grep for old path before committing.
+- install.sh silently skips submodule init if target isn't a git repo — intentional, not a bug.
+
 ## When Editing This Repo
 
 | Component | Location | Key Rule |
@@ -70,6 +88,11 @@ All changes on feature branches: `git checkout -b <type>/<scope>-<description>-<
 - [ ] Ripple map checked — all cross-references updated
 - [ ] Manual test: `bash install.sh /tmp/test-project` → verify in Claude Code
 
+## Testing Local Changes
+
+- **Local install test**: `SOLANA_CLAUDE_LOCAL_SRC=. bash install.sh /tmp/test-project` — uses local repo instead of cloning from GitHub.
+- **Agents-only mode**: `bash install.sh --agents /path` — installs to `.agents/` instead of `.claude/`. Test both modes when modifying install.sh.
+
 ## Project Learnings
 <!-- Append 1-2 line entries after non-obvious bugs, stale-doc incidents,
      or config changes that had unexpected side effects.
@@ -78,6 +101,9 @@ All changes on feature branches: `git checkout -b <type>/<scope>-<description>-<
 ### Recurring Issues
 
 ### Fix Patterns
+
+- When submodule paths change upstream: `grep -r "old/path" .claude/` → update all references → `bash validate.sh`
+- When adding a component: follow Ripple Map above, then `bash validate.sh && bash tests/run_all.sh` to catch anything missed
 
 ### Config Conventions
 
