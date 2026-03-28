@@ -24,8 +24,11 @@ That's it. Claude now has Solana superpowers.
 
 After setup, run `/setup-mcp` in Claude Code to configure:
 - **Helius** — On-chain data, DAS API, webhooks (needs API key from helius.dev)
+- **solana-dev** — Solana Foundation official docs and API references (no key needed)
 - **Context7** — Library documentation lookup (no key needed)
 - **Puppeteer** — Browser automation for dApp testing (no key needed)
+- **context-mode** — Context window optimization for large responses (no key needed)
+- **memsearch** — Persistent AI memory across sessions (no key needed)
 
 ---
 
@@ -151,7 +154,10 @@ your-project/
 │   │   │   ├── sendai/            # DeFi protocols
 │   │   │   ├── solana-game/       # Game dev (Unity, PSG1)
 │   │   │   ├── cloudflare/        # Infrastructure
-│   │   │   └── trailofbits/       # Security auditing
+│   │   │   ├── trailofbits/       # Security auditing
+│   │   │   ├── qedgen/            # Formal verification (Lean 4)
+│   │   │   ├── solana-mobile/     # Mobile Wallet Adapter
+│   │   │   └── colosseum/         # Startup research (Colosseum)
 │   │   ├── token-2022.md     # Token Extensions guide
 │   │   ├── backend-async.md  # Axum/Tokio patterns
 │   │   └── deployment.md     # Deploy workflows
@@ -272,7 +278,6 @@ bash update.sh /path/to/your-project
 ## Resources
 
 - [CLAUDE-solana.md](./CLAUDE-solana.md) - Full configuration reference
-- [CHANGELOG.md](./CHANGELOG.md) - Version history
 - [.claude/agents/](./.claude/agents/) - All agent definitions
 - [.claude/commands/](./.claude/commands/) - All commands
 - [.claude/skills/](./.claude/skills/) - Knowledge base

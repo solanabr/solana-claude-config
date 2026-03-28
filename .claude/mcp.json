@@ -7,14 +7,6 @@
         "HELIUS_API_KEY": "${HELIUS_API_KEY}"
       }
     },
-    "solana-agent-kit": {
-      "command": "npx",
-      "args": ["-y", "solana-mcp@latest"],
-      "env": {
-        "SOLANA_PRIVATE_KEY": "${SOLANA_PRIVATE_KEY}",
-        "RPC_URL": "${RPC_URL}"
-      }
-    },
     "solana-dev": {
       "command": "npx",
       "args": ["-y", "mcp-remote@latest", "https://mcp.solana.com/mcp"]
@@ -26,6 +18,14 @@
     "puppeteer": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-puppeteer@latest"]
+    },
+    "context-mode": {
+      "command": "npx",
+      "args": ["-y", "context-mode@latest"]
+    },
+    "memsearch": {
+      "command": "npx",
+      "args": ["-y", "memsearch-mcp@latest"]
     }
   }
 }

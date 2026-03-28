@@ -2,10 +2,10 @@
 
 Production-ready Claude Code configuration for full-stack Solana development. Combines best practices from multiple sources into an agent-optimized, token-efficient config you can install and adapt to your specific project.
 
-The idea here is to provide a generic CLAUDE.md that relies on subagents to plan and execute actions, dynamically loading markdown files, saving tokens and context in the end of the day. This config fully leverages the official Claude Code config recommandations:
+The idea here is to provide a generic CLAUDE.md that relies on subagents to plan and execute actions, dynamically loading markdown files, saving tokens and context in the end of the day. This config fully leverages the official Claude Code config recommendations:
 - Rules are only loaded whenever specific file types are involved;
 - SKILL.md is a mega hub to dynamically-disclosed skill files that are directly fetched from the best skill repos distributed across the ecosystem (Solana Foundation, Colosseum, Solana Mobile, SendAI, etc);
-- Plus, it's CLAUDE-solana.md is less than half the size of the usual CLAUDE.md, leaving space for it's self improvements programmed into the agents, noting and learning from anti-patterns, errors, recurrecy and more.
+- Plus, its CLAUDE-solana.md is less than half the size of the usual CLAUDE.md, leaving space for its self improvements programmed into the agents, noting and learning from anti-patterns, errors, recurrency and more.
 
 Current multi-agent workflow favors monorepos, so we use a single CLAUDE.md/config for the whole project while leveraging agents and context-specific skills to solve each step of builder flow.
 
@@ -17,7 +17,7 @@ A complete `.claude/` configuration that turns Claude into a Solana development 
 
 - **15 specialized agents** for different tasks (architecture, Anchor, Pinocchio, DeFi, tokens, frontend, mobile, backend, DevOps, QA, docs, games, Unity, learning, research)
 - **22 workflow commands** for building, testing, deploying, profiling, migrating, and committing
-- **MCP server integrations** for real-time on-chain data (Helius), docs lookup (Context7), and browser automation (Puppeteer)
+- **6 MCP server integrations** for on-chain data (Helius), Solana docs (solana-dev), library docs (Context7), browser automation (Puppeteer), context optimization (context-mode), and persistent memory (memsearch)
 - **Agent teams** for multi-step workflows (architect → engineer → QA)
 - **Progressive skill loading** that only loads context when needed (saves tokens)
 - **Auto-loading rules** that enforce best practices based on file patterns
@@ -110,8 +110,11 @@ Pre-configured MCP servers in `.claude/mcp.json` (API keys go in `.env`):
 | Server | Capabilities |
 |--------|-------------|
 | **Helius** | 60+ tools: RPC, DAS API, webhooks, priority fees, token metadata, NFT data |
+| **solana-dev** | Solana Foundation official MCP — Solana docs, guides, and API references |
 | **Context7** | Up-to-date library documentation lookup |
 | **Puppeteer** | Browser automation for dApp testing and visual verification |
+| **context-mode** | Context window optimization — compresses large RPC responses, build logs, and code analysis |
+| **memsearch** | Persistent AI memory across sessions — auto-captures summaries, semantic search, git-friendly storage |
 
 ### Token-Efficient Design
 
@@ -141,7 +144,6 @@ Pre-configured MCP servers in `.claude/mcp.json` (API keys go in `.env`):
 .
 ├── CLAUDE.md                    # Main hub - Claude reads this first
 ├── README.md                    # This file
-├── CHANGELOG.md                 # Version history
 ├── install.sh                   # One-liner installer
 ├── update.sh                    # Config updater
 ├── validate.sh                  # Config integrity checker

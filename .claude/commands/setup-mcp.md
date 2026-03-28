@@ -25,8 +25,8 @@ fi
 For each key below, ask the user to paste a value or say "skip":
 
 1. **HELIUS_API_KEY** — Helius RPC + DAS API (get one at https://dev.helius.xyz)
-2. **SOLANA_PRIVATE_KEY** — Base58 private key for Solana Agent Kit (use a dev wallet, never your main)
-3. **RPC_URL** — Solana RPC endpoint (e.g. `https://mainnet.helius-rpc.com/?api-key=YOUR_KEY`)
+2. **COLOSSEUM_COPILOT_PAT** — Colosseum Copilot for startup research (optional, get at https://arena.colosseum.org/copilot)
+3. **MISTRAL_API_KEY** — QEDGen formal verification (optional, get at https://console.mistral.ai)
 
 For each value provided, write or update the line in `.env`. Skip means leave it empty.
 
@@ -36,9 +36,9 @@ Print which keys are configured vs skipped:
 
 ```
 MCP secrets (.env):
-  HELIUS_API_KEY      [configured / skipped]
-  SOLANA_PRIVATE_KEY  [configured / skipped]
-  RPC_URL             [configured / skipped]
+  HELIUS_API_KEY        [configured / skipped]
+  COLOSSEUM_COPILOT_PAT [configured / skipped]
+  MISTRAL_API_KEY       [configured / skipped]
 ```
 
 Remind the user: restart Claude Code to pick up changes.

@@ -21,8 +21,9 @@ assert_contains "$MCP_CONTENT" '"mcpServers"' "mcp.json has mcpServers key"
 assert_contains "$MCP_CONTENT" '"helius"' "mcp.json has helius server"
 assert_contains "$MCP_CONTENT" '"context7"' "mcp.json has context7 server"
 assert_contains "$MCP_CONTENT" '"puppeteer"' "mcp.json has puppeteer server"
-assert_contains "$MCP_CONTENT" '"solana-agent-kit"' "mcp.json has solana-agent-kit server"
 assert_contains "$MCP_CONTENT" '"solana-dev"' "mcp.json has solana-dev server"
+assert_contains "$MCP_CONTENT" '"context-mode"' "mcp.json has context-mode server"
+assert_contains "$MCP_CONTENT" '"memsearch"' "mcp.json has memsearch server"
 
 # Check .env.example exists
 ENV_EXAMPLE="$REPO_ROOT/.env.example"
