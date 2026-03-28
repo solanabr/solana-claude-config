@@ -1,6 +1,22 @@
 {
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_EFFORT_LEVEL": "auto"
+  },
+
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "denyWrite": ["~/.ssh", "~/.gnupg", "~/.aws", "~/.config/solana/id.json"]
+    }
+  },
+
+  "defaultMode": "default",
+
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "csharp-lsp@claude-plugins-official": true
   },
 
   "includeCoAuthoredBy": false,
@@ -160,6 +176,14 @@
       "Bash(solana-verify *)",
       "Bash(mollusk *)",
       "Bash(litesvm *)",
+      "Bash(spl-token *)",
+      "Bash(just *)",
+      "Bash(make *)",
+      "Bash(cmake *)",
+      "Bash(wasm-pack *)",
+      "Bash(cross *)",
+      "Bash(cargo-generate *)",
+      "Bash(solana-install *)",
 
       "Read(*)",
       "Edit(*)",
@@ -194,11 +218,50 @@
       "Bash(solana withdraw-from-nonce-account *)",
       "Bash(docker rm *)",
       "Bash(docker rmi *)",
-      "Bash(docker system prune *)"
+      "Bash(docker system prune *)",
+      "Bash(solana close *)",
+      "Bash(solana authorize *)",
+      "Bash(spl-token burn *)",
+      "Bash(spl-token close *)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f *)"
     ]
   },
 
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🤖 Solana Claude Config is ON 🚀🦾 powered by @SuperteamBR 🇧🇷'\necho ''\nif command -v solana >/dev/null 2>&1; then\n  echo \"🔗 $(solana config get | grep 'RPC URL' | awk '{print $3}')\"\n  echo \"👛 $(solana address 2>/dev/null || echo 'No wallet configured')\"\nelse\n  echo '⚠️  Solana CLI not found'\nfi"
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "for f in $(git diff --cached --name-only 2>/dev/null); do\n  case \"$f\" in\n    *.rs) command -v rustfmt >/dev/null 2>&1 && rustfmt \"$f\" 2>/dev/null || true ;;\n    *.ts|*.tsx|*.js|*.jsx|*.json) command -v npx >/dev/null 2>&1 && npx prettier --write \"$f\" 2>/dev/null || true ;;\n  esac\ndone"
+          }
+        ]
+      }
+    ],
+
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"🤖 Agent completed: ${CLAUDE_SUBAGENT_NAME:-unknown}\""
+          }
+        ]
+      }
+    ],
+
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

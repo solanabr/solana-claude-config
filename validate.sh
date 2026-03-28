@@ -97,6 +97,15 @@ for dir in .claude/skills/ext/*/; do
 done
 echo ""
 
+# --- .env.example ---
+echo "[Environment]"
+if [ -f .env.example ]; then
+  check ".env.example exists" 0
+else
+  check ".env.example exists" 1
+fi
+echo ""
+
 # --- JSON files ---
 echo "[JSON]"
 if [ -f .claude/settings.json ]; then

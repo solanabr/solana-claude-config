@@ -24,4 +24,8 @@ assert_contains "$MCP_CONTENT" '"puppeteer"' "mcp.json has puppeteer server"
 assert_contains "$MCP_CONTENT" '"solana-agent-kit"' "mcp.json has solana-agent-kit server"
 assert_contains "$MCP_CONTENT" '"solana-dev"' "mcp.json has solana-dev server"
 
+# Check .env.example exists
+ENV_EXAMPLE="$REPO_ROOT/.env.example"
+assert_file_exists "$ENV_EXAMPLE" ".env.example exists"
+
 print_summary

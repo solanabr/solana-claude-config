@@ -33,6 +33,7 @@ You are maintaining the **solana-claude-config** repository - a template/library
 .
 ├── CLAUDE.md              # This file (meta-config for maintaining this repo)
 ├── CLAUDE-solana.md       # The actual Solana builder config (copy to projects)
+├── .env.example           # API key template (copied to .env)
 ├── README.md              # Documentation for users
 ├── QUICK-START.md         # Quick start guide
 ├── CHANGELOG.md           # Version history

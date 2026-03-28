@@ -15,8 +15,8 @@ Routes to the right skill file based on the task. Read the relevant section, fol
 - [ext/solana-dev/skill/SKILL.md](ext/solana-dev/skill/SKILL.md) — Solana Foundation skill (framework-kit-first, Kit types, wallet-standard)
 
 Key references within:
-- [programs-anchor.md](ext/solana-dev/skill/references/programs-anchor.md) — Anchor patterns, IDL, constraints
-- [programs-pinocchio.md](ext/solana-dev/skill/references/programs-pinocchio.md) — Zero-copy, CU optimization
+- [programs/anchor.md](ext/solana-dev/skill/references/programs/anchor.md) — Anchor patterns, IDL, constraints
+- [programs/pinocchio.md](ext/solana-dev/skill/references/programs/pinocchio.md) — Zero-copy, CU optimization
 - [frontend-framework-kit.md](ext/solana-dev/skill/references/frontend-framework-kit.md) — React hooks, wallet connection, @solana/kit UI
 - [kit-web3-interop.md](ext/solana-dev/skill/references/kit-web3-interop.md) — Kit ↔ web3.js boundary patterns
 - [testing.md](ext/solana-dev/skill/references/testing.md) — LiteSVM, Mollusk, Surfpool, CI
@@ -107,8 +107,8 @@ From [Colosseum](ext/colosseum/skills/colosseum-copilot/):
 |--------------------|---------------|
 | Wallet connection, React hooks | ext/solana-dev → frontend-framework-kit.md |
 | Transaction building, Kit types | ext/solana-dev → kit-web3-interop.md |
-| Anchor program code | ext/solana-dev → programs-anchor.md |
-| CU optimization, Pinocchio | ext/solana-dev → programs-pinocchio.md |
+| Anchor program code | ext/solana-dev → programs/anchor.md |
+| CU optimization, Pinocchio | ext/solana-dev → programs/pinocchio.md |
 | Unit testing, CU benchmarks | ext/solana-dev → testing.md |
 | Security review, audit | ext/solana-dev → security.md + ext/trailofbits |
 | Backend API, indexer | backend-async.md |

@@ -47,7 +47,7 @@ Every program change:
 
 ## MCP Servers
 
-MCP servers are configured in `.claude/mcp.json`. Available servers:
+MCP servers are configured in `.claude/mcp.json`. API keys go in `.env` (never in mcp.json). Available servers:
 - **Helius** — 60+ tools: RPC, DAS API, webhooks, priority fees, token metadata
 - **Context7** — Up-to-date library documentation lookup
 - **Puppeteer** — Browser automation for dApp testing

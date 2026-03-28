@@ -71,11 +71,20 @@ else
   echo "Created .gitignore with $EXT_PATTERN"
 fi
 
+# Copy .env.example and create .env if missing
+if [ -f "$TEMP_DIR/repo/.env.example" ]; then
+  cp "$TEMP_DIR/repo/.env.example" "$TARGET_DIR/.env.example"
+  if [ ! -f "$TARGET_DIR/.env" ]; then
+    cp "$TARGET_DIR/.env.example" "$TARGET_DIR/.env"
+    echo "Created .env from .env.example"
+  fi
+fi
+
 echo ""
 echo "Installation complete!"
 echo ""
 echo "Next steps:"
 echo "  1. cd $TARGET_DIR"
-echo "  2. Review .claude/mcp.json and add your API keys"
+echo "  2. Edit .env to add your API keys (Helius, RPC, etc.)"
 echo "  3. Run 'claude' to start Claude Code with Solana config"
 echo "  4. Try /build-program or /audit-solana commands"

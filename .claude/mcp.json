@@ -4,15 +4,15 @@
       "command": "npx",
       "args": ["-y", "helius-mcp@latest"],
       "env": {
-        "HELIUS_API_KEY": ""
+        "HELIUS_API_KEY": "${HELIUS_API_KEY}"
       }
     },
     "solana-agent-kit": {
       "command": "npx",
       "args": ["-y", "solana-mcp@latest"],
       "env": {
-        "SOLANA_PRIVATE_KEY": "",
-        "RPC_URL": ""
+        "SOLANA_PRIVATE_KEY": "${SOLANA_PRIVATE_KEY}",
+        "RPC_URL": "${RPC_URL}"
       }
     },
     "solana-dev": {

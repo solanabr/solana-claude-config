@@ -41,14 +41,6 @@ else
   (cd "$TEMP_DIR/repo" && git submodule update --init --recursive 2>/dev/null) || true
 fi
 
-# Preserve local mcp.json if it exists
-MCP_BACKUP=""
-if [ -f "$TARGET_DIR/.claude/mcp.json" ]; then
-  MCP_BACKUP="$TEMP_DIR/mcp.json.bak"
-  cp "$TARGET_DIR/.claude/mcp.json" "$MCP_BACKUP"
-  echo "Preserved local mcp.json"
-fi
-
 # Track what changed
 CHANGES=""
 
@@ -58,11 +50,6 @@ if ! diff -rq "$TEMP_DIR/repo/.claude" "$TARGET_DIR/.claude" >/dev/null 2>&1; th
 fi
 
 cp -r "$TEMP_DIR/repo/.claude" "$TARGET_DIR/"
-
-# Restore local mcp.json
-if [ -n "$MCP_BACKUP" ]; then
-  cp "$MCP_BACKUP" "$TARGET_DIR/.claude/mcp.json"
-fi
 
 # Compare and copy CLAUDE.md
 if [ -f "$TEMP_DIR/repo/CLAUDE-solana.md" ]; then

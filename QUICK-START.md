@@ -228,7 +228,7 @@ Edit `.claude/settings.json` to customize allowed commands.
 
 ### Configure MCP Servers
 
-Edit `.claude/mcp.json` to add API keys or additional MCP servers.
+Edit `.env` to add API keys for MCP servers (Helius, Solana Agent Kit). Run `/setup-mcp` for guided setup.
 
 ---
 
